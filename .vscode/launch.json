@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "VeiculoFormTela",
+            "request": "launch",
+            "mainClass": "com.mycompany.projetoblade.view.VeiculoFormTela",
+            "projectName": "ProjetoBlade"
+        },
+        {
+            "type": "java",
             "name": "Current File",
             "request": "launch",
             "mainClass": "${file}"
