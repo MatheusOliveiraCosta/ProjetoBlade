@@ -1,6 +1,7 @@
 package com.mycompany.projetoblade.view;
 
 import com.mycompany.projetoblade.model.Veiculo;
+import com.mycompany.projetoblade.model.Cliente;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -28,6 +29,7 @@ public class TelaCatalogo extends JPanel {
     private List<Veiculo> veiculos;
     private List<CardVeiculo> cardsVeiculos;
     private JFrame parentFrame;
+    private Cliente clienteLogado; // Cliente atualmente logado
     
     public TelaCatalogo(JFrame parentFrame) {
         this.parentFrame = parentFrame;
@@ -91,6 +93,23 @@ public class TelaCatalogo extends JPanel {
         btnMeusVeiculos.setContentAreaFilled(false);
         btnMeusVeiculos.setCursor(new Cursor(Cursor.HAND_CURSOR));
         leftPanel.add(btnMeusVeiculos);
+        btnMeusVeiculos.addActionListener(e -> {
+            // Verifica se há cliente logado
+            if (clienteLogado == null) {
+                JOptionPane.showMessageDialog(this, "Você precisa estar logado para acessar seus veículos.", "Atenção", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            // Busca o veículo do cliente (apenas 1 veículo por cliente)
+            Veiculo veiculoCliente = buscarVeiculoDoCliente(clienteLogado);
+            
+            if (veiculoCliente == null) {
+                JOptionPane.showMessageDialog(this, "Você ainda não possui um veículo.", "Informação", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                // Abre a tela com o único veículo
+                MeusVeiculosTela.mostrar(parentFrame, veiculoCliente);
+            }
+        });
 
         gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.3; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.anchor = GridBagConstraints.WEST;
         header.add(leftPanel, gbc);
@@ -130,6 +149,11 @@ public class TelaCatalogo extends JPanel {
         btnConserto.setContentAreaFilled(false);
         btnConserto.setCursor(new Cursor(Cursor.HAND_CURSOR));
         rightPanel.add(btnConserto);
+        btnConserto.addActionListener(e -> {
+            // Cria e mostra a tela como um modal sobre a janela principal
+            SolicitarManutencaoTela telaManutencao = new SolicitarManutencaoTela(parentFrame);
+            telaManutencao.setVisible(true);
+        });
         
         // Botão Vender
         JButton btnVender = new JButton("Vender");
@@ -140,6 +164,16 @@ public class TelaCatalogo extends JPanel {
         btnVender.setContentAreaFilled(false);
         btnVender.setCursor(new Cursor(Cursor.HAND_CURSOR));
         rightPanel.add(btnVender);
+        btnVender.addActionListener(e -> {
+            // Abre a tela para o cliente cadastrar o carro dele
+            // Certifique-se de que o Cursor já criou a classe VenderCarroTela antes!
+            try {
+                VenderCarroTela telaVenda = new VenderCarroTela(parentFrame);
+                telaVenda.setVisible(true);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Funcionalidade em desenvolvimento!");
+            }
+        });
         
         // --- ÍCONE DE USUÁRIO (logo após Vender) ---
         JButton btnUserIcon = new JButton();
@@ -168,10 +202,9 @@ public class TelaCatalogo extends JPanel {
             btnUserIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
         }
 
-        // Ação ao clicar no ícone
+        // Ação ao clicar no ícone - abre tela de cadastro
         btnUserIcon.addActionListener(e -> {
-            // Aqui você pode abrir a tela de login ou perfil
-            JOptionPane.showMessageDialog(this, "Área do Usuário / Login");
+            CadastroClienteTela.mostrar(parentFrame);
         });
 
         // Adiciona o ícone logo após o botão Vender
@@ -598,6 +631,31 @@ public class TelaCatalogo extends JPanel {
         }
         
         return coluna;
+    }
+    
+    /**
+     * Busca o veículo do cliente (simulado)
+     * Regra: Cada cliente pode possuir apenas 1 veículo
+     * 
+     * @param cliente Cliente para buscar o veículo
+     * @return Veiculo do cliente ou null se não possuir
+     */
+    private Veiculo buscarVeiculoDoCliente(Cliente cliente) {
+        // Mock: Se o cliente for "João", retorna um veículo específico
+        if (cliente != null && cliente.getUsuario() != null) {
+            String nomeCliente = cliente.getUsuario().getNome();
+            
+            if (nomeCliente != null && nomeCliente.equalsIgnoreCase("João")) {
+                // Retorna um veículo específico para o cliente de teste
+                Veiculo veiculo = new Veiculo("Hatch Moderno", "Hyundai", 2022, "ABC-1234", "CHASSI1");
+                veiculo.setIdVeiculo(1);
+                veiculo.setPreco(75000.00);
+                return veiculo;
+            }
+        }
+        
+        // Para outros clientes, retorna null (não possui veículo)
+        return null;
     }
     
     /**
