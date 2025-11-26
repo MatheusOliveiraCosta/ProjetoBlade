@@ -52,4 +52,6 @@ public interface VeiculoRepository extends Repository<Veiculo, Integer> {
      * @return lista de veículos na faixa de preço
      */
     List<Veiculo> findByPrecoBetween(double precoMin, double precoMax);
+
+    List<Veiculo> findByDono(int clienteId);
 }

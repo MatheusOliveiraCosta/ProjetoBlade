@@ -36,17 +36,6 @@ public class VendaService {
      * @return venda realizada
      * @throws IllegalArgumentException se dados inválidos
      */
-    public Venda realizarVenda(Venda venda) {
-        validarVenda(venda);
-        
-        // Atualiza status do veículo para vendido
-        Veiculo veiculo = venda.getVeiculo();
-        veiculo.setStatus("VENDIDO");
-        veiculoRepository.save(veiculo);
-        
-        // Salva a venda
-        return vendaRepository.save(venda);
-    }
     
     /**
      * Busca venda por ID
@@ -192,5 +181,19 @@ public class VendaService {
         if (!"DISPONIVEL".equalsIgnoreCase(veiculo.get().getStatus())) {
             throw new IllegalArgumentException("Veículo não está disponível para venda");
         }
+    }
+
+    public Venda realizarVenda(Venda venda) {
+    validarVenda(venda);
+    
+    Veiculo veiculo = venda.getVeiculo();
+    
+    // ATUALIZAÇÃO IMPORTANTE:
+    veiculo.setStatus("VENDIDO");
+    veiculo.setDono(venda.getCliente()); // <--- O pulo do gato: define o dono!
+    
+    veiculoRepository.save(veiculo); // Salva a alteração do veículo
+    
+    return vendaRepository.save(venda);
     }
 }

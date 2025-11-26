@@ -52,4 +52,13 @@ public class VeiculoRepositoryImpl extends InMemoryRepository<Veiculo, Integer> 
                 .filter(v -> v.getPreco() >= precoMin && v.getPreco() <= precoMax)
                 .collect(Collectors.toList());
     }
+
+        @Override
+    public List<Veiculo> findByDono(int clienteId) {
+        return findAll().stream()
+                .filter(v -> v.getDono() != null && v.getDono().getId() == clienteId)
+                .collect(Collectors.toList());
+    }
 }
+
+

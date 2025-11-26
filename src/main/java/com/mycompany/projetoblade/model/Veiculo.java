@@ -15,6 +15,7 @@ public class Veiculo {
     private String marca;
     private String status;
     private double preco;
+    private Cliente dono;
 
     // Construtor padrão
     public Veiculo() {}
@@ -92,6 +93,14 @@ public class Veiculo {
 
     public void setPreco(double preco) {
         this.preco = preco;
+    }
+
+    public Cliente getDono() {
+        return dono;
+    }
+
+    public void setDono(Cliente dono) {
+        this.dono = dono;
     }
 
     @Override

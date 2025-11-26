@@ -212,4 +212,18 @@ public class ClienteService {
         
         return Character.getNumericValue(cpf.charAt(10)) == digito2;
     }
+
+    public Cliente autenticar(String email, String senha) {
+    // Busca o cliente pelo email
+    Optional<Cliente> clienteOpt = clienteRepository.findByEmail(email);
+    
+    if (clienteOpt.isPresent()) {
+        Cliente cliente = clienteOpt.get();
+        // Verifica se a senha bate (na vida real usaria hash, aqui comparamos texto)
+        if (cliente.getUsuario().getSenha().equals(senha)) {
+            return cliente; // Login sucesso!
+        }
+    }
+    return null; // Falha no login
+    }
 }

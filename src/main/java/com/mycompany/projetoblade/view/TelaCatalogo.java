@@ -1,6 +1,7 @@
 package com.mycompany.projetoblade.view;
 
 import com.mycompany.projetoblade.model.Veiculo;
+import com.mycompany.projetoblade.utils.Sessao;
 import com.mycompany.projetoblade.model.Cliente;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import javax.imageio.ImageIO;
+import com.mycompany.projetoblade.service.VeiculoService;
 
 /**
  * Tela de catálogo de veículos - Interface moderna inspirada no site Blade Motors.
@@ -30,11 +32,16 @@ public class TelaCatalogo extends JPanel {
     private List<CardVeiculo> cardsVeiculos;
     private JFrame parentFrame;
     private Cliente clienteLogado; // Cliente atualmente logado
+    private VeiculoService veiculoService;
     
-    public TelaCatalogo(JFrame parentFrame) {
+    public TelaCatalogo(JFrame parentFrame, VeiculoService veiculoService) {
         this.parentFrame = parentFrame;
         this.veiculos = new ArrayList<>();
         this.cardsVeiculos = new ArrayList<>();
+        this.parentFrame = parentFrame;
+        this.veiculoService = veiculoService; // Salva o serviço recebido
+        
+        this.veiculos = new ArrayList<>();
         
         setLayout(new BorderLayout());
         setBackground(Color.WHITE);
@@ -213,6 +220,24 @@ public class TelaCatalogo extends JPanel {
         gbc.gridx = 2; gbc.weightx = 0.3; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.anchor = GridBagConstraints.EAST;
         header.add(rightPanel, gbc);
         
+            btnMeusVeiculos.addActionListener(e -> {
+        if (!Sessao.isLogado()) {
+            JOptionPane.showMessageDialog(this, "Faça login para ver seus veículos.");
+            return;
+        }
+
+        // Busca REAL usando o repositório em memória
+        // Agora ele vai procurar carros que tenham o ID do cliente logado
+        List<Veiculo> meusCarros = veiculoService.buscarPorDono(Sessao.getClienteLogado().getId());
+
+        if (meusCarros.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Você ainda não possui veículos.");
+        } else {
+            // Como sua regra é 1 carro, pegamos o primeiro
+            MeusVeiculosTela.mostrar(parentFrame, meusCarros.get(0));
+        }
+            }); 
+
         return header;
     }
     
@@ -949,8 +974,8 @@ public class TelaCatalogo extends JPanel {
             // Botão finalizar
             JButton btnFinalizar = new JButton("FINALIZAR COMPRA");
             btnFinalizar.setFont(new Font("Segoe UI", Font.BOLD, 14));
-            btnFinalizar.setForeground(Color.GREEN);
-            btnFinalizar.setBackground(new Color(101, 67, 33));
+            btnFinalizar.setBackground(new Color(0, 168, 89)); 
+            btnFinalizar.setForeground(Color.WHITE);
             btnFinalizar.setPreferredSize(new Dimension(0, 45));
             btnFinalizar.setAlignmentX(Component.CENTER_ALIGNMENT);
             btnFinalizar.setCursor(new Cursor(Cursor.HAND_CURSOR));

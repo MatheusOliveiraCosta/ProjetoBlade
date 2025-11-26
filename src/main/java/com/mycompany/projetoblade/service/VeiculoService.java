@@ -173,5 +173,14 @@ public class VeiculoService {
         if (veiculoExistente.isPresent() && veiculoExistente.get().getIdVeiculo() != veiculo.getIdVeiculo()) {
             throw new IllegalArgumentException("Já existe um veículo com esta placa");
         }
+
+        
+    }
+
+    public List<Veiculo> buscarPorDono(int clienteId) {
+        if (clienteId <= 0) {
+            throw new IllegalArgumentException("ID do cliente inválido");
+        }
+        return veiculoRepository.findByDono(clienteId);
     }
 }
