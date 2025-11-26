@@ -949,7 +949,7 @@ public class TelaCatalogo extends JPanel {
             // Botão finalizar
             JButton btnFinalizar = new JButton("FINALIZAR COMPRA");
             btnFinalizar.setFont(new Font("Segoe UI", Font.BOLD, 14));
-            btnFinalizar.setForeground(Color.WHITE);
+            btnFinalizar.setForeground(Color.GREEN);
             btnFinalizar.setBackground(new Color(101, 67, 33));
             btnFinalizar.setPreferredSize(new Dimension(0, 45));
             btnFinalizar.setAlignmentX(Component.CENTER_ALIGNMENT);
