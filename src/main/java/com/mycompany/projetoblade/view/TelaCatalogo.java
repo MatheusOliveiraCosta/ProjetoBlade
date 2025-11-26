@@ -40,7 +40,6 @@ public class TelaCatalogo extends JPanel {
         this.cardsVeiculos = new ArrayList<>();
         this.parentFrame = parentFrame;
         this.veiculoService = veiculoService; // Salva o serviço recebido
-        
         this.veiculos = new ArrayList<>();
         
         setLayout(new BorderLayout());
@@ -986,7 +985,10 @@ public class TelaCatalogo extends JPanel {
             content.add(btnFinalizar);
             
             add(content);
+            
         }
+
     }
+    
 }
 

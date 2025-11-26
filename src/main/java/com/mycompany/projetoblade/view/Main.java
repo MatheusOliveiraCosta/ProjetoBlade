@@ -1,11 +1,12 @@
 package com.mycompany.projetoblade.view;
 
-import com.mycompany.projetoblade.repository.VeiculoRepository;
-import com.mycompany.projetoblade.repository.VeiculoRepositoryImpl;
-import com.mycompany.projetoblade.service.VeiculoService;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+
+import com.mycompany.projetoblade.repository.VeiculoRepository;
+import com.mycompany.projetoblade.repository.VeiculoRepositoryImpl;
+import com.mycompany.projetoblade.service.VeiculoService;
 
 /**
  * Classe principal da aplicação.
@@ -37,4 +38,5 @@ public class Main {
         });
 
     }
+    
 }
