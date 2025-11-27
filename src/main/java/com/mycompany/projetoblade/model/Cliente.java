@@ -1,5 +1,6 @@
 package com.mycompany.projetoblade.model;
 
+import java.time.LocalDate;
 import java.util.Objects;
 
 /**
@@ -10,7 +11,9 @@ public class Cliente {
     private int id;
     private String endereco;
     private String cpf;
+    private String celular;
     private Usuario usuario;
+    private LocalDate dataNascimento;
 
     // Construtor padrão
     public Cliente() {}
@@ -19,6 +22,13 @@ public class Cliente {
     public Cliente(String endereco, String cpf, Usuario usuario) {
         this.endereco = endereco;
         this.cpf = cpf;
+        this.usuario = usuario;
+    }
+
+    public Cliente(String endereco, String cpf, String celular, Usuario usuario) {
+        this.endereco = endereco;
+        this.cpf = cpf;
+        this.celular = celular;
         this.usuario = usuario;
     }
 
@@ -55,6 +65,22 @@ public class Cliente {
         this.usuario = usuario;
     }
 
+    public LocalDate getDataNascimento() {
+        return dataNascimento;
+    }
+
+    public String getCelular() {
+        return celular;
+    }
+
+    public void setCelular(String celular) {
+        this.celular = celular;
+    }
+
+    public void setDataNascimento(LocalDate dataNascimento) {
+        this.dataNascimento = dataNascimento;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -78,7 +104,5 @@ public class Cliente {
                 '}';
     }
 
-    public String getDataNascimento() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+    // Antigo método removido — agora usamos LocalDate getDataNascimento/setDataNascimento
 }

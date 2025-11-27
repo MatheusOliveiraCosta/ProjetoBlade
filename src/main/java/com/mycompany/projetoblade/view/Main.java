@@ -39,11 +39,15 @@ public class Main {
         com.mycompany.projetoblade.repository.VendaRepository vendaRepository = new VendaRepositoryImpl();
         VendaService vendaService = new VendaService(vendaRepository, veiculoRepository, clienteRepository);
 
+        // Criar repositório/serviço de manutenções (compartilhado)
+        com.mycompany.projetoblade.repository.ManutencaoRepository manutRepo = new com.mycompany.projetoblade.repository.ManutencaoRepositoryImpl();
+        com.mycompany.projetoblade.service.ManutencaoService manutencaoService = new com.mycompany.projetoblade.service.ManutencaoService(manutRepo);
+
         // Criar e exibir a tela de catálogo
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Blade Motors - Catálogo de Veículos");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            TelaCatalogo catalogo = new TelaCatalogo(frame, veiculoService, clienteService, vendaService);
+            TelaCatalogo catalogo = new TelaCatalogo(frame, veiculoService, clienteService, vendaService, manutencaoService);
             // ensure the catalog panel is actually used as the frame's content
             frame.setContentPane(catalogo);
             frame.setSize(1280, 800);

@@ -1,7 +1,6 @@
 package com.mycompany.projetoblade.model;
 
 import java.time.LocalDate;
-import java.util.Objects;
 
 /**
  * Classe que representa um funcionário no sistema.
@@ -23,8 +22,35 @@ public class Funcionario extends Usuario {
         this.dataAdmissao = dataAdmissao;
     }
 
+    // Getters and setters to ensure fields are used
+    public String getMatricula() {
+        return matricula;
+    }
+
+    public void setMatricula(String matricula) {
+        this.matricula = matricula;
+    }
+
+    public LocalDate getDataAdmissao() {
+        return dataAdmissao;
+    }
+
+    public void setDataAdmissao(LocalDate dataAdmissao) {
+        this.dataAdmissao = dataAdmissao;
+    }
+
     // Getter para o menu ler
     public String getTipo() {
         return tipo;
+    }
+
+    @Override
+    public String toString() {
+        return "Funcionario{" +
+                "nome='" + getNome() + '\'' +
+                ", matricula='" + matricula + '\'' +
+                ", dataAdmissao=" + dataAdmissao +
+                ", tipo='" + tipo + '\'' +
+                '}';
     }
 }

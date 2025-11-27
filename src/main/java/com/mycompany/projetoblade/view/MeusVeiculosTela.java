@@ -16,9 +16,12 @@ public class MeusVeiculosTela extends JDialog {
     
     private Veiculo veiculo;
     private JFrame parentFrame;
+    private com.mycompany.projetoblade.service.ManutencaoService manutencaoService;
+    private com.mycompany.projetoblade.service.VeiculoService veiculoService;
     
-    public MeusVeiculosTela(JFrame parent, Veiculo veiculo) {
+    public MeusVeiculosTela(JFrame parent, Veiculo veiculo, com.mycompany.projetoblade.service.ManutencaoService service, com.mycompany.projetoblade.service.VeiculoService veiculoService) {
         super(parent, true); // Modal
+        this.manutencaoService = service;
         this.parentFrame = parent;
         setUndecorated(true); // Remove barra de título padrão
         setSize(900, 600);
@@ -26,6 +29,8 @@ public class MeusVeiculosTela extends JDialog {
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         
         this.veiculo = veiculo;
+        this.veiculoService = veiculoService;
+        this.manutencaoService = manutencaoService;
         
         // Fundo cinza claro
         getContentPane().setBackground(new Color(0xD9D9D9));
@@ -125,6 +130,7 @@ public class MeusVeiculosTela extends JDialog {
      */
     public class CardVeiculoCliente extends JPanel {
         private Veiculo veiculo;
+        private JPanel painelStatus;
         
         public CardVeiculoCliente(Veiculo veiculo) {
             this.veiculo = veiculo;
@@ -189,6 +195,15 @@ public class MeusVeiculosTela extends JDialog {
             add(labelPlaca);
             add(Box.createVerticalStrut(20));
             
+            // === PAINEL DE STATUS DINÂMICO (escondido se não houver manutenção ativa) ===
+            painelStatus = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            painelStatus.setOpaque(true);
+            painelStatus.setAlignmentX(Component.LEFT_ALIGNMENT);
+            painelStatus.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+            painelStatus.setVisible(false);
+            add(painelStatus);
+            add(Box.createVerticalStrut(10));
+            
             // === BOTÕES ===
             JPanel painelBotoes = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
             painelBotoes.setOpaque(false);
@@ -209,8 +224,8 @@ public class MeusVeiculosTela extends JDialog {
                 "borderWidth: 0;");
             
             btnAgendar.addActionListener(e -> {
-                // Abre a tela de solicitação de manutenção usando o parent da instância
-                SolicitarManutencaoTela.mostrar(MeusVeiculosTela.this.parentFrame);
+                // Abre a tela de solicitação de manutenção já preenchida com a placa
+                SolicitarManutencaoTela.mostrar(MeusVeiculosTela.this.parentFrame, placa);
             });
             
             // Botão "Detalhes" — mostra marca e modelo
@@ -232,8 +247,29 @@ public class MeusVeiculosTela extends JDialog {
             });
             
             painelBotoes.add(btnAgendar);
+            
+            // Botão "Solicitar Nova Manutenção" (mais explícito)
+            JButton btnSolicitarNova = new JButton("Solicitar Nova Manutenção");
+            btnSolicitarNova.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            btnSolicitarNova.setForeground(Color.WHITE);
+            btnSolicitarNova.setBackground(new Color(0x0066CC));
+            btnSolicitarNova.setBorderPainted(false);
+            btnSolicitarNova.setFocusPainted(false);
+            btnSolicitarNova.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btnSolicitarNova.setPreferredSize(new Dimension(200, 35));
+            btnSolicitarNova.putClientProperty(FlatClientProperties.STYLE, "arc: 10; borderWidth: 0;");
+            btnSolicitarNova.addActionListener(e -> {
+                // Open SolicitarManutencaoTela with shared services and prefilled placa
+                SolicitarManutencaoTela tela = new SolicitarManutencaoTela(MeusVeiculosTela.this.parentFrame, MeusVeiculosTela.this.veiculoService, MeusVeiculosTela.this.manutencaoService);
+                if (tela != null) tela.setPlaca(placa);
+                tela.setVisible(true);
+            });
+            painelBotoes.add(btnSolicitarNova);
             painelBotoes.add(btnHistorico);
             add(painelBotoes);
+
+            // Após construir os botões, carrega e atualiza o painel de status
+            atualizarPainelDeStatus(placa);
         }
         
         /**
@@ -273,6 +309,77 @@ public class MeusVeiculosTela extends JDialog {
 
             JOptionPane.showMessageDialog(this, detalhes, "Detalhes do Veículo", JOptionPane.INFORMATION_MESSAGE);
         }
+
+        // Busca manutenções pela placa e exibe o painel de status apropriado
+        private void atualizarPainelDeStatus(String placa) {
+            try {
+                if (MeusVeiculosTela.this.manutencaoService == null) {
+                    painelStatus.setVisible(false);
+                    return;
+                }
+
+                java.util.List<com.mycompany.projetoblade.model.Manutencao> list = MeusVeiculosTela.this.manutencaoService.buscarPorPlaca(placa);
+
+                if (list == null || list.isEmpty()) {
+                    painelStatus.setVisible(false);
+                    return;
+                }
+
+                // Encontra a manutenção mais recente (por data)
+                com.mycompany.projetoblade.model.Manutencao chosen = list.stream()
+                        .sorted((a,b) -> {
+                            java.time.LocalDate da = a.getDataAgendamento() != null ? a.getDataAgendamento() : java.time.LocalDate.MIN;
+                            java.time.LocalDate db = b.getDataAgendamento() != null ? b.getDataAgendamento() : java.time.LocalDate.MIN;
+                            return db.compareTo(da);
+                        }).findFirst().orElse(list.get(0));
+
+                String status = chosen.getStatus() != null ? chosen.getStatus().toUpperCase() : "";
+                painelStatus.removeAll();
+
+                JLabel lblStatus = new JLabel();
+                lblStatus.setFont(new Font("Segoe UI", Font.BOLD, 14));
+                lblStatus.setForeground(Color.WHITE);
+                lblStatus.setOpaque(false);
+
+                if ("AGUARDANDO".equals(status)) {
+                    painelStatus.setBackground(new Color(0xFFCC00)); // Amarelo
+                    lblStatus.setText("Aguardando");
+                    painelStatus.add(lblStatus);
+                    painelStatus.setVisible(true);
+                } else if ("EM_ANDAMENTO".equals(status)) {
+                    painelStatus.setBackground(new Color(0x007ACC)); // Azul
+                    lblStatus.setText("Em Andamento");
+                    painelStatus.add(lblStatus);
+                    painelStatus.setVisible(true);
+                } else if ("CONCLUIDO".equals(status) || "CONCLUIDO".equals(status.replaceAll("\u00E7","c"))) {
+                    painelStatus.setBackground(new Color(0x00A859)); // Verde
+                    lblStatus.setText("Concluído");
+                    painelStatus.add(lblStatus);
+
+                    // Botão para baixar laudo
+                    JButton btnBaixar = new JButton("Baixar Laudo (PDF)");
+                    btnBaixar.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                    btnBaixar.setForeground(Color.WHITE);
+                    btnBaixar.setBackground(new Color(0x0066CC));
+                    btnBaixar.setBorderPainted(false);
+                    btnBaixar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                    btnBaixar.addActionListener(evt -> {
+                        JOptionPane.showMessageDialog(MeusVeiculosTela.this, "Iniciando download do laudo (simulado)...", "Baixar Laudo", JOptionPane.INFORMATION_MESSAGE);
+                    });
+                    painelStatus.add(Box.createHorizontalStrut(10));
+                    painelStatus.add(btnBaixar);
+                    painelStatus.setVisible(true);
+                } else {
+                    painelStatus.setVisible(false);
+                }
+
+                revalidate();
+                repaint();
+
+            } catch (Exception ex) {
+                painelStatus.setVisible(false);
+            }
+        }
     }
     
     /**
@@ -280,7 +387,14 @@ public class MeusVeiculosTela extends JDialog {
      */
     public static void mostrar(JFrame parent, Veiculo veiculo) {
         SwingUtilities.invokeLater(() -> {
-            MeusVeiculosTela tela = new MeusVeiculosTela(parent, veiculo);
+            MeusVeiculosTela tela = new MeusVeiculosTela(parent, veiculo, null, null);
+            tela.setVisible(true);
+        });
+    }
+
+    public static void mostrar(JFrame parent, Veiculo veiculo, com.mycompany.projetoblade.service.VeiculoService veiculoService, com.mycompany.projetoblade.service.ManutencaoService manutencaoService) {
+        SwingUtilities.invokeLater(() -> {
+            MeusVeiculosTela tela = new MeusVeiculosTela(parent, veiculo, manutencaoService, veiculoService);
             tela.setVisible(true);
         });
     }

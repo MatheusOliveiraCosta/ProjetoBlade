@@ -11,11 +11,10 @@ import java.util.Optional;
 public class ClienteDAO implements ClienteRepository {
 
     private static final String INSERT_USUARIO_SQL = "INSERT INTO USUARIO (nome, email, senha) VALUES (?, ?, ?)";
-    private static final String INSERT_CLIENTE_SQL = "INSERT INTO CLIENTE (id_usuario, cpf, data_nascimento) VALUES (?, ?, ?)";
-    private static final String SELECT_ALL_CLIENTES_SQL = "SELECT u.id, u.nome, u.email, u.senha, c.cpf, c.data_nascimento FROM USUARIO u JOIN CLIENTE c ON u.id = c.id_usuario";
+    private static final String INSERT_CLIENTE_SQL = "INSERT INTO CLIENTE (id_usuario, cpf, celular, data_nascimento, endereco) VALUES (?, ?, ?, ?, ?)";
+    private static final String SELECT_ALL_CLIENTES_SQL = "SELECT u.id, u.nome, u.email, u.senha, c.cpf, c.celular, c.data_nascimento, c.endereco FROM USUARIO u JOIN CLIENTE c ON u.id = c.id_usuario";
     private static final String SELECT_CLIENTE_BY_ID_SQL = SELECT_ALL_CLIENTES_SQL + " WHERE u.id = ?";
-    private static final String SELECT_CLIENTE_BY_CPF_SQL = SELECT_ALL_CLIENTES_SQL + " WHERE c.cpf = ?";
-    private static final String SELECT_CLIENTE_BY_EMAIL_SQL = SELECT_ALL_CLIENTES_SQL + " WHERE u.email = ?";
+    // Queries kept minimal; specific findByCpf/findByEmail not implemented yet.
 
     @Override
     public Cliente save(Cliente cliente) {
@@ -51,7 +50,13 @@ public class ClienteDAO implements ClienteRepository {
             try (PreparedStatement psCliente = conn.prepareStatement(INSERT_CLIENTE_SQL)) {
                 psCliente.setInt(1, cliente.getId());
                 psCliente.setString(2, cliente.getCpf());
-                psCliente.setDate(3, java.sql.Date.valueOf(cliente.getDataNascimento()));
+                psCliente.setString(3, cliente.getCelular());
+                if (cliente.getDataNascimento() != null) {
+                    psCliente.setDate(4, java.sql.Date.valueOf(cliente.getDataNascimento()));
+                } else {
+                    psCliente.setDate(4, null);
+                }
+                psCliente.setString(5, cliente.getEndereco());
                 psCliente.executeUpdate();
             }
 
@@ -141,10 +146,12 @@ public class ClienteDAO implements ClienteRepository {
         Cliente cliente = new Cliente();
         cliente.setUsuario(usuario);
         cliente.setCpf(rs.getString("cpf"));
+        cliente.setCelular(rs.getString("celular"));
         Date dataNascimento = rs.getDate("data_nascimento");
         if (dataNascimento != null) {
             cliente.setDataNascimento(dataNascimento.toLocalDate());
         }
+        cliente.setEndereco(rs.getString("endereco"));
         return cliente;
     }
 }

@@ -2,6 +2,9 @@ package com.mycompany.projetoblade.view;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import javax.swing.*;
+import javax.swing.JFormattedTextField;
+import javax.swing.text.MaskFormatter;
+import java.text.ParseException;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.*;
@@ -15,13 +18,16 @@ public class VenderCarroTela extends JDialog {
     private JComboBox<String> campoMarca;
     private JTextField campoModelo;
     private JTextField campoAno;
-    private JTextField campoPlaca;
+    private JFormattedTextField campoPlaca;
     private JTextField campoQuilometragem;
     private JTextField campoPreco;
     private JLabel labelFotos;
     private int fotosSelecionadas = 0;
     
-    public VenderCarroTela(JFrame parent) {
+    private com.mycompany.projetoblade.service.VeiculoService veiculoService;
+    private com.mycompany.projetoblade.service.ClienteService clienteService;
+
+    public VenderCarroTela(JFrame parent, com.mycompany.projetoblade.service.VeiculoService veiculoService, com.mycompany.projetoblade.service.ClienteService clienteService) {
         super(parent, true); // Modal
         setUndecorated(true); // Remove barra de título padrão
         setSize(550, 700);
@@ -102,7 +108,32 @@ public class VenderCarroTela extends JDialog {
         // Placa
         painelCampos.add(criarLabel("Placa:"));
         painelCampos.add(Box.createVerticalStrut(5));
-        campoPlaca = criarCampoTexto();
+        try {
+            MaskFormatter placaMask = new MaskFormatter("UUU-####");
+            placaMask.setPlaceholderCharacter('_');
+            campoPlaca = new JFormattedTextField(placaMask);
+            campoPlaca.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            campoPlaca.setBackground(Color.WHITE);
+            campoPlaca.setBorder(new LineBorder(new Color(200, 200, 200), 1, true));
+            campoPlaca.setPreferredSize(new Dimension(0, 35));
+            campoPlaca.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+            campoPlaca.setAlignmentX(Component.LEFT_ALIGNMENT);
+            campoPlaca.putClientProperty(FlatClientProperties.STYLE, 
+                "arc: 5;" +
+                "borderWidth: 1;");
+        } catch (ParseException ex) {
+            // Fallback para campo de texto comum
+            campoPlaca = new JFormattedTextField();
+            campoPlaca.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            campoPlaca.setBackground(Color.WHITE);
+            campoPlaca.setBorder(new LineBorder(new Color(200, 200, 200), 1, true));
+            campoPlaca.setPreferredSize(new Dimension(0, 35));
+            campoPlaca.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+            campoPlaca.setAlignmentX(Component.LEFT_ALIGNMENT);
+            campoPlaca.putClientProperty(FlatClientProperties.STYLE, 
+                "arc: 5;" +
+                "borderWidth: 1;");
+        }
         painelCampos.add(campoPlaca);
         painelCampos.add(Box.createVerticalStrut(15));
         
@@ -191,15 +222,74 @@ public class VenderCarroTela extends JDialog {
             "arc: 10;" +
             "borderWidth: 0;");
         
+        this.veiculoService = veiculoService;
+        this.clienteService = clienteService;
+
         btnEnviar.addActionListener(e -> {
-            if (validarCampos()) {
-                JOptionPane.showMessageDialog(
-                    this, 
-                    "Seu veículo foi enviado para análise! Entraremos em contato em breve.", 
-                    "Sucesso", 
-                    JOptionPane.INFORMATION_MESSAGE
-                );
-                dispose();
+            if (!validarCampos()) return;
+
+            // Require login before allowing vehicle registration
+            if (!com.mycompany.projetoblade.utils.Sessao.isLogado()) {
+                int opt = JOptionPane.showConfirmDialog(this, "Você precisa estar logado para cadastrar um veículo. Deseja fazer login agora?", "Login necessário", JOptionPane.YES_NO_OPTION);
+                if (opt == JOptionPane.YES_OPTION) {
+                    LoginTela.mostrar(parent, this.clienteService);
+                }
+                if (!com.mycompany.projetoblade.utils.Sessao.isLogado()) {
+                    JOptionPane.showMessageDialog(this, "Cadastro cancelado. Faça login para cadastrar um veículo.", "Atenção", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
+
+            try {
+                String marca = campoMarca.getSelectedItem().toString();
+                String modelo = campoModelo.getText().trim();
+                int ano = Integer.parseInt(campoAno.getText().trim());
+                String placa = campoPlaca.getText().trim().toUpperCase();
+                // gera chassi robusto a partir de UUID (12 caracteres hex)
+                String chassi = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
+                double preco = Double.parseDouble(campoPreco.getText().trim().replace(",", "."));
+
+                // Verifica se já existe veículo com a placa informada
+                if (this.veiculoService != null) {
+                    try {
+                        java.util.Optional<com.mycompany.projetoblade.model.Veiculo> existente = this.veiculoService.buscarPorPlaca(placa);
+                        if (existente != null && existente.isPresent()) {
+                            JOptionPane.showMessageDialog(this, "Já existe um veículo cadastrado com esta placa.", "Atenção", JOptionPane.WARNING_MESSAGE);
+                            return;
+                        }
+                    } catch (IllegalArgumentException iae) {
+                        // buscarPorPlaca pode lançar se a placa for inválida; ignore aqui porque validamos o campo
+                    }
+                }
+
+                com.mycompany.projetoblade.model.Veiculo novo = new com.mycompany.projetoblade.model.Veiculo(modelo, marca, ano, placa, chassi);
+                novo.setPreco(preco);
+                // set owner if logged
+                if (com.mycompany.projetoblade.utils.Sessao.getClienteLogado() != null) {
+                    novo.setDono(com.mycompany.projetoblade.utils.Sessao.getClienteLogado());
+                }
+
+                // Ensure status is DISPONIVEL (constructor already sets it, but enforce)
+                novo.setStatus("DISPONIVEL");
+
+                // Persist via service and handle validation errors gracefully
+                try {
+                    if (this.veiculoService != null) {
+                        this.veiculoService.salvarVeiculo(novo);
+                    }
+
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Seu veículo foi cadastrado e está disponível em Ofertas!",
+                        "Sucesso",
+                        JOptionPane.INFORMATION_MESSAGE
+                    );
+                    dispose();
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(this, "Não foi possível cadastrar o veículo: " + ex.getMessage(), "Erro de validação", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Erro ao cadastrar veículo: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
             }
         });
         
@@ -309,8 +399,15 @@ public class VenderCarroTela extends JDialog {
             return false;
         }
         
-        if (campoPlaca.getText().trim().isEmpty()) {
+        String placaText = campoPlaca.getText().trim().toUpperCase();
+        if (placaText.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Por favor, preencha a placa do veículo.", "Erro", JOptionPane.ERROR_MESSAGE);
+            campoPlaca.requestFocus();
+            return false;
+        }
+        // Valida formato AAA-1234
+        if (!placaText.matches("[A-Z]{3}-\\d{4}")) {
+            JOptionPane.showMessageDialog(this, "Placa inválida. Use o formato AAA-1234 (ex: ABC-1234).", "Erro", JOptionPane.ERROR_MESSAGE);
             campoPlaca.requestFocus();
             return false;
         }
@@ -357,7 +454,14 @@ public class VenderCarroTela extends JDialog {
      */
     public static void mostrar(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
-            VenderCarroTela tela = new VenderCarroTela(parent);
+            VenderCarroTela tela = new VenderCarroTela(parent, null, null);
+            tela.setVisible(true);
+        });
+    }
+
+    public static void mostrar(JFrame parent, com.mycompany.projetoblade.service.VeiculoService veiculoService, com.mycompany.projetoblade.service.ClienteService clienteService) {
+        SwingUtilities.invokeLater(() -> {
+            VenderCarroTela tela = new VenderCarroTela(parent, veiculoService, clienteService);
             tela.setVisible(true);
         });
     }

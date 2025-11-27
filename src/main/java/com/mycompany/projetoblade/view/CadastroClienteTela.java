@@ -182,7 +182,7 @@ public class CadastroClienteTela extends JDialog {
             if (validarCampos()) {
                 try {
                     Usuario usuario = new Usuario(campoNome.getText().trim(), campoEmail.getText().trim(), new String(campoSenha.getPassword()));
-                    Cliente cliente = new Cliente(campoEndereco.getText().trim(), campoCPF.getText().trim(), usuario);
+                    Cliente cliente = new Cliente(campoEndereco.getText().trim(), campoCPF.getText().trim(), campoCelular.getText().trim(), usuario);
 
                     Cliente salvo = this.clienteService.salvarCliente(cliente);
                     // faz login automático

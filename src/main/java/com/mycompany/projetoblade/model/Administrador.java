@@ -10,15 +10,15 @@ public class Administrador extends Funcionario {
     private String nivelAcesso;
 
     // Construtor padrão
-    public Administrador() {}
+    public Administrador() { this.tipo = "ADM"; }
 
     // Construtor com parâmetros principais
     public Administrador(String matricula, LocalDate dataAdmissao, Usuario usuario, String nivelAcesso) {
         super(matricula, dataAdmissao, usuario);
         this.nivelAcesso = nivelAcesso;
+        this.tipo = "ADM";
     }
 
-    this.tipo = "ADM";
 
     // Getters e Setters
     public String getNivelAcesso() {

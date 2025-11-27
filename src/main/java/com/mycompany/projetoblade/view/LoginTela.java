@@ -4,6 +4,12 @@ import com.formdev.flatlaf.FlatClientProperties;
 import com.mycompany.projetoblade.service.ClienteService;
 import com.mycompany.projetoblade.utils.Sessao;
 import com.mycompany.projetoblade.model.Cliente;
+import com.mycompany.projetoblade.model.Mecanico;
+import com.mycompany.projetoblade.model.Administrador;
+import com.mycompany.projetoblade.model.Usuario;
+import java.time.LocalDate;
+import com.mycompany.projetoblade.view.AgendaOficinaTela;
+import com.mycompany.projetoblade.view.TelaGerenciarClientes;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -153,6 +159,34 @@ public class LoginTela extends JDialog {
                 String senha = new String(campoSenha.getPassword());
 
                 try {
+                    // Special test accounts: mecanico and administrador
+                    if ("MEC@gmail.com".equalsIgnoreCase(email) && "123456".equals(senha)) {
+                        Usuario u = new Usuario("Mecânico Test", "MEC@gmail.com", "123456");
+                        Mecanico mec = new Mecanico("M001", LocalDate.now(), u, "Geral");
+                        Sessao.login(mec);
+                        JOptionPane.showMessageDialog(this, "Login como Mecânico realizado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                        dispose();
+                        // Open agenda for mecânico
+                        JFrame owner = (JFrame) this.getOwner();
+                        SwingUtilities.invokeLater(() -> AgendaOficinaTela.mostrar(owner, new com.mycompany.projetoblade.service.ManutencaoService(new com.mycompany.projetoblade.repository.ManutencaoRepositoryImpl())));
+                        return;
+                    }
+
+                    if ("ADM@gmail.com".equalsIgnoreCase(email) && "123456".equals(senha)) {
+                        Usuario u = new Usuario("Administrador Test", "ADM@gmail.com", "123456");
+                        Administrador adm = new Administrador("A001", LocalDate.now(), u, "TOTAL");
+                        Sessao.login(adm);
+                        JOptionPane.showMessageDialog(this, "Login como Administrador realizado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                        dispose();
+                        // Open client management for administrador
+                        SwingUtilities.invokeLater(() -> {
+                            TelaGerenciarClientes tela = new TelaGerenciarClientes((JFrame) this.getOwner(), new com.mycompany.projetoblade.service.ClienteService(new com.mycompany.projetoblade.repository.ClienteRepositoryImpl()));
+                            tela.setVisible(true);
+                        });
+                        return;
+                    }
+
+                    // Fallback to existing ClienteService authentication
                     Cliente cliente = this.clienteService.autenticar(email, senha);
                     if (cliente != null) {
                         Sessao.login(cliente);

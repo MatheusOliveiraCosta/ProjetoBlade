@@ -1,6 +1,14 @@
 package com.mycompany.projetoblade.view;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import com.mycompany.projetoblade.service.ManutencaoService;
+import com.mycompany.projetoblade.service.VeiculoService;
+import com.mycompany.projetoblade.model.Manutencao;
+import com.mycompany.projetoblade.model.Veiculo;
+import com.mycompany.projetoblade.utils.Sessao;
+import com.mycompany.projetoblade.model.Cliente;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.MaskFormatter;
@@ -13,7 +21,12 @@ import java.awt.image.BufferedImage;
 
 public class SolicitarManutencaoTela extends JDialog {
 
-    public SolicitarManutencaoTela(JFrame parent) {
+    private VeiculoService veiculoService;
+    private ManutencaoService manutencaoService;
+    private JTextField placaField;
+    private JFormattedTextField txtData;
+
+    public SolicitarManutencaoTela(JFrame parent, VeiculoService veiculoService, ManutencaoService manutencaoService) {
         super(parent, true); // Modal
         setUndecorated(true); // Remove a barra de título padrão
         setSize(500, 650);
@@ -83,10 +96,13 @@ public class SolicitarManutencaoTela extends JDialog {
 
         // --- 3. FORMULÁRIO ---
         
+        this.veiculoService = veiculoService;
+        this.manutencaoService = manutencaoService;
+
         // Campo Placa
         mainPanel.add(criarLabel("Placa:"));
-        JTextField txtPlaca = criarTextField();
-        mainPanel.add(txtPlaca);
+        this.placaField = criarTextField();
+        mainPanel.add(this.placaField);
         mainPanel.add(Box.createVerticalStrut(15));
 
         // Campo Descrição
@@ -105,7 +121,7 @@ public class SolicitarManutencaoTela extends JDialog {
 
         // Campo Data
         mainPanel.add(criarLabel("Data desejada:"));
-        JFormattedTextField txtData = null;
+        txtData = null;
         try {
             MaskFormatter dateMask = new MaskFormatter("##/##/####");
             dateMask.setPlaceholderCharacter('_');
@@ -134,11 +150,42 @@ public class SolicitarManutencaoTela extends JDialog {
         btnSolicitar.putClientProperty(FlatClientProperties.STYLE, "arc: 15;");
         
         btnSolicitar.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, 
-                "Solicitação enviada com sucesso!\nAguarde o contato da oficina.", 
-                "Sucesso", 
-                JOptionPane.INFORMATION_MESSAGE);
-            dispose();
+            try {
+                String placa = placaField.getText().trim();
+                String descricao = txtDescricao.getText().trim();
+                String dataTxt = txtData.getText().trim();
+                LocalDate data = null;
+                try {
+                    DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+                    data = LocalDate.parse(dataTxt, fmt);
+                } catch (Exception ex) {
+                    data = LocalDate.now();
+                }
+
+                Veiculo v = null;
+                if (veiculoService != null && placa != null && !placa.isEmpty()) {
+                    v = veiculoService.buscarPorPlaca(placa).orElse(null);
+                }
+
+                Manutencao m = new Manutencao();
+                m.setDataAgendamento(data);
+                m.setDescricao(descricao);
+                m.setStatus("AGUARDANDO"); // Regra: inicial AGUARDANDO
+                m.setVeiculo(v);
+
+                // se existir serviço, salva
+                if (manutencaoService != null) {
+                    manutencaoService.salvarManutencao(m);
+                }
+
+                JOptionPane.showMessageDialog(this,
+                        "Solicitação enviada com sucesso!\nAguarde o contato da oficina.",
+                        "Sucesso",
+                        JOptionPane.INFORMATION_MESSAGE);
+                dispose();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Erro ao solicitar manutenção: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            }
         });
 
         // Botão Cancelar (Vermelho)
@@ -189,6 +236,25 @@ public class SolicitarManutencaoTela extends JDialog {
             "margin: 0, 10, 0, 10"); // top, left, bottom, right padding
     }
     
+    // Conveniência: construtor com apenas parent (mantém compatibilidade)
+    public SolicitarManutencaoTela(JFrame parent) {
+        this(parent, null, null);
+    }
+
+    // Conveniência: mostra a tela já com a placa preenchida
+    public static void mostrar(JFrame parent, String placa) {
+        SwingUtilities.invokeLater(() -> {
+            SolicitarManutencaoTela tela = new SolicitarManutencaoTela(parent);
+            if (tela.placaField != null && placa != null) tela.placaField.setText(placa);
+            tela.setVisible(true);
+        });
+    }
+
+    /** Set placa programmatically (safe accessor) */
+    public void setPlaca(String placa) {
+        if (this.placaField != null && placa != null) this.placaField.setText(placa);
+    }
+
     // Método estático para facilitar a chamada
     public static void mostrar(JFrame parent) {
         SwingUtilities.invokeLater(() -> {
@@ -196,4 +262,6 @@ public class SolicitarManutencaoTela extends JDialog {
         });
     }
 }
+
+
 

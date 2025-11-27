@@ -35,4 +35,6 @@ public class ClienteRepositoryImpl extends InMemoryRepository<Cliente, Integer> 
                            c.getUsuario().getEmail().equalsIgnoreCase(email))
                 .findFirst();
     }
+
+    
 }

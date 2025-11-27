@@ -13,6 +13,7 @@ import java.util.Optional;
 public class ClienteService {
     
     private final ClienteRepository clienteRepository;
+    private final java.util.List<java.util.function.Consumer<Cliente>> listeners = new java.util.ArrayList<>();
     
     // Injeção de dependência via construtor
     public ClienteService(ClienteRepository clienteRepository) {
@@ -27,7 +28,19 @@ public class ClienteService {
      */
     public Cliente salvarCliente(Cliente cliente) {
         validarCliente(cliente);
-        return clienteRepository.save(cliente);
+        Cliente salvo = clienteRepository.save(cliente);
+        // Notifica listeners sobre novo cliente salvo
+        if (salvo != null) {
+            for (java.util.function.Consumer<Cliente> l : listeners) {
+                try { l.accept(salvo); } catch (Exception ex) { /* ignore listener errors */ }
+            }
+        }
+        return salvo;
+    }
+
+    /** Registra listener que será chamado quando um cliente for salvo */
+    public void addClienteListener(java.util.function.Consumer<Cliente> listener) {
+        if (listener != null) listeners.add(listener);
     }
     
     /**

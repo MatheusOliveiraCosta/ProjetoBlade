@@ -1,6 +1,5 @@
 package com.mycompany.projetoblade.view;
 
-import com.formdev.flatlaf.FlatClientProperties;
 import com.mycompany.projetoblade.model.Cliente;
 import com.mycompany.projetoblade.model.Manutencao;
 import com.mycompany.projetoblade.model.Usuario;
@@ -12,7 +11,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -29,8 +27,9 @@ public class AgendaOficinaTela extends JDialog {
     private JTable tabela;
     private DefaultTableModel modeloTabela;
     private List<Manutencao> listaManutencoes;
+    private com.mycompany.projetoblade.service.ManutencaoService manutencaoService;
 
-    public AgendaOficinaTela(JFrame parent) {
+    public AgendaOficinaTela(JFrame parent, com.mycompany.projetoblade.service.ManutencaoService manutencaoService) {
         super(parent, true); // Modal
         setUndecorated(true);
         setSize(1000, 700); // Tela larga para caber a tabela
@@ -116,7 +115,7 @@ public class AgendaOficinaTela extends JDialog {
         JLabel lblFiltro = new JLabel("Filtrar por status:");
         lblFiltro.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         
-        JComboBox<String> comboStatus = new JComboBox<>(new String[]{"Todos", "Aguardando", "Em Andamento", "Concluído", "Cancelado"});
+        JComboBox<String> comboStatus = new JComboBox<>(new String[]{"Todos", "Aguardando", "Em Andamento", "Concluído"});
         comboStatus.setBackground(Color.WHITE);
         comboStatus.setFocusable(false);
         
@@ -124,8 +123,8 @@ public class AgendaOficinaTela extends JDialog {
         filterPanel.add(comboStatus);
         contentPanel.add(filterPanel, BorderLayout.NORTH);
 
-        // Tabela
-        String[] colunas = {"O.S. (ID)", "DATA", "CLIENTES (Clique para detalhes)", "VEICULO (PLACA)", "MECÂNICO", "STATUS"};
+        // Tabela (DATA, CLIENTE, PLACA, STATUS)
+        String[] colunas = {"DATA", "CLIENTE", "PLACA", "STATUS"};
         
         modeloTabela = new DefaultTableModel(colunas, 0) {
             @Override
@@ -160,9 +159,8 @@ public class AgendaOficinaTela extends JDialog {
         mainPanel.add(contentPanel, BorderLayout.CENTER);
         
         setContentPane(mainPanel);
-        
-        // Carregar dados mockados
-        carregarDadosExemplo();
+        this.manutencaoService = manutencaoService;
+        carregarDadosDaService();
     }
 
     private void estilizarTabela() {
@@ -217,14 +215,43 @@ public class AgendaOficinaTela extends JDialog {
             m.setIdManutencao(100 + i);
             listaManutencoes.add(m);
             
-            modeloTabela.addRow(new Object[]{
+                modeloTabela.addRow(new Object[]{
                 m.getIdManutencao(),
                 m.getDataAgendamento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
                 c1.getUsuario().getNome(), // Nome do cliente
                 v1.getModelo() + " (" + v1.getPlaca() + ")",
-                m1.getUsuario().getNome(),
+                m1.getNome(),
                 status
             });
+        }
+    }
+
+    private void carregarDadosDaService() {
+        modeloTabela.setRowCount(0);
+        if (this.manutencaoService == null) {
+            carregarDadosExemplo();
+            return;
+        }
+
+        java.util.List<com.mycompany.projetoblade.model.Manutencao> lista = this.manutencaoService.listarTodos();
+        for (com.mycompany.projetoblade.model.Manutencao m : lista) {
+            String clienteNome = "-";
+            if (m.getVeiculo() != null && m.getVeiculo().getDono() != null && m.getVeiculo().getDono().getUsuario() != null) {
+                clienteNome = m.getVeiculo().getDono().getUsuario().getNome();
+            }
+            String placa = m.getVeiculo() != null ? m.getVeiculo().getPlaca() : "-";
+            String data = m.getDataAgendamento() != null ? m.getDataAgendamento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "-";
+            modeloTabela.addRow(new Object[]{data, clienteNome, placa, mapModelToDisplayStatus(m.getStatus())});
+        }
+    }
+
+    private String mapModelToDisplayStatus(String model) {
+        if (model == null) return "Aguardando";
+        switch (model.toUpperCase()) {
+            case "AGUARDANDO": return "Aguardando";
+            case "EM_ANDAMENTO": return "Em Andamento";
+            case "CONCLUIDO": return "Concluído";
+            default: return model;
         }
     }
 
@@ -242,8 +269,8 @@ public class AgendaOficinaTela extends JDialog {
     }
     
     // Método estático para chamar a tela
-    public static void mostrar(JFrame parent) {
-        new AgendaOficinaTela(parent).setVisible(true);
+    public static void mostrar(JFrame parent, com.mycompany.projetoblade.service.ManutencaoService manutencaoService) {
+        new AgendaOficinaTela(parent, manutencaoService).setVisible(true);
     }
 
     

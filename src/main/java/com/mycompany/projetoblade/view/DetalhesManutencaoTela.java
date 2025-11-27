@@ -69,7 +69,7 @@ public class DetalhesManutencaoTela extends JDialog {
         
         // Título Dinâmico
         String tituloTexto = String.format("<html><b>Cliente:</b> %s<br/><b>Veículo:</b> %s (%s)</html>", 
-            manutencao.getFuncionario().getUsuario().getNome(), // Ajuste conforme seu modelo real de Cliente
+            manutencao.getFuncionario().getNome(), // Ajuste conforme seu modelo real de Cliente
             manutencao.getVeiculo().getModelo(),
             manutencao.getVeiculo().getPlaca());
             
@@ -135,10 +135,11 @@ public class DetalhesManutencaoTela extends JDialog {
         statusPanel.setOpaque(false);
         statusPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         
-        // Combo de Status
-        String[] statusOpcoes = {"Aguardando", "Em Diagnóstico", "Aguardando Aprovação", "Em Andamento", "Concluído", "Cancelado"};
+        // Combo de Status (apenas os estados usados no sistema)
+        String[] statusOpcoes = {"Aguardando", "Em Andamento", "Concluído"};
         comboStatus = new JComboBox<>(statusOpcoes);
-        comboStatus.setSelectedItem(manutencao.getStatus()); // Seleciona o atual
+        // Seleciona o valor correspondente ao status do modelo
+        comboStatus.setSelectedItem(mapModelToDisplayStatus(manutencao.getStatus()));
         comboStatus.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         comboStatus.setBackground(Color.WHITE);
         comboStatus.setPreferredSize(new Dimension(200, 40));
@@ -169,7 +170,9 @@ public class DetalhesManutencaoTela extends JDialog {
     private void salvarAlteracoes() {
         // 1. Atualiza o objeto Manutencao na memória
         manutencao.setDescricao(txtDiagnostico.getText());
-        manutencao.setStatus((String) comboStatus.getSelectedItem());
+        // Converte a opção exibida para o token do modelo
+        String selecionado = (String) comboStatus.getSelectedItem();
+        manutencao.setStatus(mapDisplayToModelStatus(selecionado));
         
         // 2. Atualiza ou cria o Orçamento
         if (!txtOrcamento.getText().isEmpty()) {
@@ -220,5 +223,25 @@ public class DetalhesManutencaoTela extends JDialog {
             "borderWidth: 0;");
             
         return scroll;
+    }
+
+    private String mapModelToDisplayStatus(String model) {
+        if (model == null) return "Aguardando";
+        switch (model.toUpperCase()) {
+            case "AGUARDANDO": return "Aguardando";
+            case "EM_ANDAMENTO": return "Em Andamento";
+            case "CONCLUIDO": return "Concluído";
+            default: return model;
+        }
+    }
+
+    private String mapDisplayToModelStatus(String display) {
+        if (display == null) return "AGUARDANDO";
+        switch (display) {
+            case "Aguardando": return "AGUARDANDO";
+            case "Em Andamento": return "EM_ANDAMENTO";
+            case "Concluído": return "CONCLUIDO";
+            default: return display.toUpperCase().replace(' ', '_');
+        }
     }
 }

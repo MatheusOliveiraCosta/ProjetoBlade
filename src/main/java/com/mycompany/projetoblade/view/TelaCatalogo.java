@@ -24,6 +24,7 @@ import com.mycompany.projetoblade.service.VendaService;
 import com.mycompany.projetoblade.model.Venda;
 import com.mycompany.projetoblade.model.Pagamento;
 import java.time.LocalDate;
+        
 
 /**
  * Tela de catálogo de veículos - Interface moderna inspirada no site Blade Motors.
@@ -40,8 +41,9 @@ public class TelaCatalogo extends JPanel {
     private VeiculoService veiculoService;
     private ClienteService clienteService;
     private VendaService vendaService;
+    private com.mycompany.projetoblade.service.ManutencaoService manutencaoService;
     
-    public TelaCatalogo(JFrame parentFrame, VeiculoService veiculoService, ClienteService clienteService, VendaService vendaService) {
+    public TelaCatalogo(JFrame parentFrame, VeiculoService veiculoService, ClienteService clienteService, VendaService vendaService, com.mycompany.projetoblade.service.ManutencaoService manutencaoService) {
         this.parentFrame = parentFrame;
         this.veiculos = new ArrayList<>();
         this.cardsVeiculos = new ArrayList<>();
@@ -49,6 +51,7 @@ public class TelaCatalogo extends JPanel {
         this.veiculoService = veiculoService; // Salva o serviço recebido
         this.clienteService = clienteService;
         this.vendaService = vendaService;
+        this.manutencaoService = manutencaoService;
         this.veiculos = new ArrayList<>();
         
         setLayout(new BorderLayout());
@@ -148,9 +151,9 @@ public class TelaCatalogo extends JPanel {
         btnConserto.setContentAreaFilled(false);
         btnConserto.setCursor(new Cursor(Cursor.HAND_CURSOR));
         rightPanel.add(btnConserto);
-        btnConserto.addActionListener(e -> {
-            // Cria e mostra a tela como um modal sobre a janela principal
-            SolicitarManutencaoTela telaManutencao = new SolicitarManutencaoTela(parentFrame);
+            btnConserto.addActionListener(e -> {
+            // Cria e mostra a tela como um modal sobre a janela principal (usa o serviço compartilhado)
+            SolicitarManutencaoTela telaManutencao = new SolicitarManutencaoTela(parentFrame, this.veiculoService, this.manutencaoService);
             telaManutencao.setVisible(true);
         });
         
@@ -164,11 +167,12 @@ public class TelaCatalogo extends JPanel {
         btnVender.setCursor(new Cursor(Cursor.HAND_CURSOR));
         rightPanel.add(btnVender);
         btnVender.addActionListener(e -> {
-            // Abre a tela para o cliente cadastrar o carro dele
-            // Certifique-se de que o Cursor já criou a classe VenderCarroTela antes!
+            // Abre a tela para o cliente cadastrar o carro dele (injetando serviços)
             try {
-                VenderCarroTela telaVenda = new VenderCarroTela(parentFrame);
+                VenderCarroTela telaVenda = new VenderCarroTela(parentFrame, this.veiculoService, this.clienteService);
                 telaVenda.setVisible(true);
+                // Após fechar o modal, atualiza as ofertas para refletir o novo veículo
+                atualizarGridOfertas();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Funcionalidade em desenvolvimento!");
             }
@@ -203,43 +207,65 @@ public class TelaCatalogo extends JPanel {
 
         // Ação ao clicar no ícone - abre tela de cadastro
         btnUserIcon.addActionListener(e -> {
-            menuUsuario.removeAll(); // Limpa o menu anterior
+            // Inicializa menu e itens
+            JPopupMenu menuUsuario = new JPopupMenu();
+            JMenuItem itemLogin = new JMenuItem("Login");
+            JMenuItem itemCadastro = new JMenuItem("Cadastrar");
+            JMenuItem itemClientes = new JMenuItem("Gerenciar Clientes");
+            JMenuItem itemAgenda = new JMenuItem("Agenda Oficina");
+            JMenuItem itemPedidos = new JMenuItem("Meus Pedidos");
+            JMenuItem itemSair = new JMenuItem("Sair");
+
+            // Ações comuns
+            itemLogin.addActionListener(evt -> LoginTela.mostrar(parentFrame, clienteService));
+            itemCadastro.addActionListener(evt -> CadastroClienteTela.mostrar(parentFrame, clienteService));
+            itemSair.addActionListener(evt -> {
+                Sessao.logout();
+                JOptionPane.showMessageDialog(parentFrame, "Você saiu da sessão.");
+            });
 
             if (!Sessao.isLogado()) {
                 // --- CASO 1: DESLOGADO ---
                 menuUsuario.add(itemLogin);
                 menuUsuario.add(itemCadastro);
-                
-                // Ações para deslogado
-                itemLogin.addActionListener(evt -> new LoginTela(parentFrame).setVisible(true));
-                itemCadastro.addActionListener(evt -> CadastroClienteTela.mostrar(parentFrame)); // Sua tela de cadastro
             } else {
                 // --- CASO 2: LOGADO ---
-                Usuario usuario = Sessao.getUsuarioLogado(); // Ajuste conforme sua classe Sessao
-                
-                // Cabeçalho (Nome do usuário)
-                JMenuItem headerItem = new JMenuItem("Olá, " + usuario.getNome());
+                com.mycompany.projetoblade.model.Usuario usuario = Sessao.getUsuarioLogado();
+                JMenuItem headerItem = new JMenuItem("Olá, " + (usuario != null ? usuario.getNome() : "Usuário"));
                 headerItem.setEnabled(false);
                 menuUsuario.add(headerItem);
                 menuUsuario.addSeparator();
 
-                // SUA LÓGICA DE "TIPO" (DISCRIMINATOR) AQUI:
-                if (usuario instanceof Funcionario) {
-                    Funcionario func = (Funcionario) usuario;
-                    
-                    // Verifica se é ADM ou MEC usando a string
-                    if ("ADM".equals(func.getTipo())) {
-                        menuUsuario.add(itemClientes); 
+                // RBAC: if it is Funcionario (Administrador / Mecanico) show administrative options
+                if (usuario instanceof com.mycompany.projetoblade.model.Funcionario) {
+                    com.mycompany.projetoblade.model.Funcionario func = (com.mycompany.projetoblade.model.Funcionario) usuario;
+                    String tipo = func.getTipo();
+                    if ("ADM".equals(tipo)) {
+                        menuUsuario.add(itemClientes);
                         menuUsuario.add(itemAgenda);
-                    } 
-                    else if ("MEC".equals(func.getTipo())) {
+                    } else if ("MEC".equals(tipo)) {
                         menuUsuario.add(itemAgenda);
                     }
-                } 
-                else {
-                    // É um Cliente comum
+                } else {
+                    // Cliente comum
                     menuUsuario.add(itemPedidos);
                 }
+
+                // Associate actions to open the administrative screens
+                itemClientes.addActionListener(evt -> {
+                    // Open the client management window
+                    SwingUtilities.invokeLater(() -> {
+                        TelaGerenciarClientes tela = new TelaGerenciarClientes(parentFrame, this.clienteService);
+                        tela.setVisible(true);
+                    });
+                });
+
+                itemAgenda.addActionListener(evt -> {
+                    // Open the agenda modal using shared manutencaoService
+                    SwingUtilities.invokeLater(() -> {
+                                AgendaOficinaTela.mostrar(parentFrame, this.manutencaoService);
+                    });
+                });
 
                 menuUsuario.addSeparator();
                 menuUsuario.add(itemSair);
@@ -269,7 +295,7 @@ public class TelaCatalogo extends JPanel {
             JOptionPane.showMessageDialog(this, "Você ainda não possui veículos.");
         } else {
             // Como sua regra é 1 carro, pegamos o primeiro
-            MeusVeiculosTela.mostrar(parentFrame, meusCarros.get(0));
+            MeusVeiculosTela.mostrar(parentFrame, meusCarros.get(0), this.veiculoService, this.manutencaoService);
         }
             }); 
 

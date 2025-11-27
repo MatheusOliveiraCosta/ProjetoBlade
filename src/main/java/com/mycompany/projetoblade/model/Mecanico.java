@@ -10,15 +10,15 @@ public class Mecanico extends Funcionario {
     private String especialidade;
 
     // Construtor padrão
-    public Mecanico() {}
+    public Mecanico() { this.tipo = "MEC"; }
 
     // Construtor com parâmetros principais
     public Mecanico(String matricula, LocalDate dataAdmissao, Usuario usuario, String especialidade) {
         super(matricula, dataAdmissao, usuario);
         this.especialidade = especialidade;
+        this.tipo = "MEC";
     }
 
-    this.tipo = "MEC";
 
     // Getters e Setters
     public String getEspecialidade() {
