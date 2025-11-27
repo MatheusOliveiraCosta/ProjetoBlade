@@ -1,6 +1,10 @@
 package com.mycompany.projetoblade.view;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import com.mycompany.projetoblade.service.ClienteService;
+import com.mycompany.projetoblade.model.Cliente;
+import com.mycompany.projetoblade.model.Usuario;
+import com.mycompany.projetoblade.utils.Sessao;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -22,9 +26,11 @@ public class CadastroClienteTela extends JDialog {
     private JTextField campoCelular;
     private JTextField campoEmail;
     private JTextField campoEndereco;
+    private ClienteService clienteService;
     
-    public CadastroClienteTela(JFrame parent) {
+    public CadastroClienteTela(JFrame parent, ClienteService clienteService) {
         super(parent, true); // Modal
+        this.clienteService = clienteService;
         setUndecorated(true); // Remove barra de título padrão
         setSize(450, 700);
         setLocationRelativeTo(parent);
@@ -147,7 +153,7 @@ public class CadastroClienteTela extends JDialog {
             public void mouseClicked(MouseEvent e) {
                 // Fecha a tela de cadastro e abre a tela de login
                 dispose();
-                LoginTela.mostrar(parent);
+                LoginTela.mostrar(parent, CadastroClienteTela.this.clienteService);
             }
         });
         
@@ -174,8 +180,19 @@ public class CadastroClienteTela extends JDialog {
         // Ação do botão
         btnEntrar.addActionListener(e -> {
             if (validarCampos()) {
-                JOptionPane.showMessageDialog(this, "Cadastro realizado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
-                dispose();
+                try {
+                    Usuario usuario = new Usuario(campoNome.getText().trim(), campoEmail.getText().trim(), new String(campoSenha.getPassword()));
+                    Cliente cliente = new Cliente(campoEndereco.getText().trim(), campoCPF.getText().trim(), usuario);
+
+                    Cliente salvo = this.clienteService.salvarCliente(cliente);
+                    // faz login automático
+                    Sessao.login(salvo);
+
+                    JOptionPane.showMessageDialog(this, "Cadastro realizado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                    dispose();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Erro ao salvar cliente: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
         
@@ -245,6 +262,12 @@ public class CadastroClienteTela extends JDialog {
             return false;
         }
         
+        if (campoCelular.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Por favor, preencha o celular.", "Erro", JOptionPane.ERROR_MESSAGE);
+            campoCelular.requestFocus();
+            return false;
+        }
+
         if (campoEmail.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Por favor, preencha o email.", "Erro", JOptionPane.ERROR_MESSAGE);
             campoEmail.requestFocus();
@@ -257,9 +280,9 @@ public class CadastroClienteTela extends JDialog {
     /**
      * Método para exibir a tela de cadastro
      */
-    public static void mostrar(JFrame parent) {
+    public static void mostrar(JFrame parent, ClienteService clienteService) {
         SwingUtilities.invokeLater(() -> {
-            CadastroClienteTela tela = new CadastroClienteTela(parent);
+            CadastroClienteTela tela = new CadastroClienteTela(parent, clienteService);
             tela.setVisible(true);
         });
     }

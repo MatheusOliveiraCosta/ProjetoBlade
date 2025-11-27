@@ -10,7 +10,6 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 
 public class SolicitarManutencaoTela extends JDialog {
 

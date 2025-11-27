@@ -3,7 +3,6 @@ package com.mycompany.projetoblade.service;
 import com.mycompany.projetoblade.model.Venda;
 import com.mycompany.projetoblade.model.Veiculo;
 import com.mycompany.projetoblade.model.Cliente;
-import com.mycompany.projetoblade.model.Pagamento;
 import com.mycompany.projetoblade.repository.VendaRepository;
 import com.mycompany.projetoblade.repository.VeiculoRepository;
 import com.mycompany.projetoblade.repository.ClienteRepository;
@@ -181,10 +180,28 @@ public class VendaService {
         if (!"DISPONIVEL".equalsIgnoreCase(veiculo.get().getStatus())) {
             throw new IllegalArgumentException("Veículo não está disponível para venda");
         }
+
+        // Regra de negócio: um cliente só pode possuir 1 carro
+        Integer clienteId = venda.getCliente().getId();
+        if (clienteId != null) {
+            List<Veiculo> existentes = veiculoRepository.findByDono(clienteId);
+            if (existentes != null && !existentes.isEmpty()) {
+                throw new IllegalArgumentException("Cliente já possui um veículo – cada cliente só pode comprar 1 carro.");
+            }
+        }
     }
 
     public Venda realizarVenda(Venda venda) {
     validarVenda(venda);
+
+    // Validação adicional: um cliente só pode possuir 1 veículo
+    Integer clienteId = venda.getCliente().getId();
+    if (clienteId != null) {
+        List<Veiculo> jaPossui = veiculoRepository.findByDono(clienteId);
+        if (jaPossui != null && !jaPossui.isEmpty()) {
+            throw new IllegalArgumentException("Cliente já possui um veículo e não pode comprar outro.");
+        }
+    }
     
     Veiculo veiculo = venda.getVeiculo();
     

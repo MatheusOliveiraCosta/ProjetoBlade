@@ -1,6 +1,9 @@
 package com.mycompany.projetoblade.view;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import com.mycompany.projetoblade.service.ClienteService;
+import com.mycompany.projetoblade.utils.Sessao;
+import com.mycompany.projetoblade.model.Cliente;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -15,9 +18,11 @@ public class LoginTela extends JDialog {
     
     private JTextField campoNome;
     private JPasswordField campoSenha;
+    private ClienteService clienteService;
     
-    public LoginTela(JFrame parent) {
+    public LoginTela(JFrame parent, ClienteService clienteService) {
         super(parent, true); // Modal
+        this.clienteService = clienteService;
         setUndecorated(true); // Remove barra de título padrão
         setSize(450, 500);
         setLocationRelativeTo(parent);
@@ -92,10 +97,10 @@ public class LoginTela extends JDialog {
         mainPanel.add(Box.createVerticalStrut(30));
         
         // === CAMPOS DO FORMULÁRIO ===
-        // Nome completo
+        // Email (usado para autenticação)
         campoNome = new JTextField();
-        adicionarPlaceholder(campoNome, "João da Silva");
-        mainPanel.add(criarCampoFormulario("Nome completo:", campoNome));
+        adicionarPlaceholder(campoNome, "email@exemplo.com");
+        mainPanel.add(criarCampoFormulario("Email:", campoNome));
         mainPanel.add(Box.createVerticalStrut(20));
         
         // Senha
@@ -117,7 +122,7 @@ public class LoginTela extends JDialog {
             public void mouseClicked(MouseEvent e) {
                 // Fecha a tela de login e abre a tela de cadastro
                 dispose();
-                CadastroClienteTela.mostrar(parent);
+                CadastroClienteTela.mostrar(parent, LoginTela.this.clienteService);
             }
         });
         
@@ -141,11 +146,24 @@ public class LoginTela extends JDialog {
             "arc: 10;" + // Bordas arredondadas
             "borderWidth: 0;");
         
-        // Ação do botão
+        // Ação do botão - autentica com ClienteService e registra Sessão
         btnEntrar.addActionListener(e -> {
             if (validarCampos()) {
-                JOptionPane.showMessageDialog(this, "Login realizado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
-                dispose();
+                String email = campoNome.getText().trim();
+                String senha = new String(campoSenha.getPassword());
+
+                try {
+                    Cliente cliente = this.clienteService.autenticar(email, senha);
+                    if (cliente != null) {
+                        Sessao.login(cliente);
+                        JOptionPane.showMessageDialog(this, "Login realizado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                        dispose();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Credenciais inválidas. Verifique o e-mail e a senha.", "Erro", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Erro ao tentar autenticar: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
         
@@ -268,9 +286,9 @@ public class LoginTela extends JDialog {
     /**
      * Método para exibir a tela de login
      */
-    public static void mostrar(JFrame parent) {
+    public static void mostrar(JFrame parent, ClienteService clienteService) {
         SwingUtilities.invokeLater(() -> {
-            LoginTela tela = new LoginTela(parent);
+            LoginTela tela = new LoginTela(parent, clienteService);
             tela.setVisible(true);
         });
     }

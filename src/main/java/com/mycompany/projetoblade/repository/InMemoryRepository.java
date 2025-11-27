@@ -14,6 +14,7 @@ public class InMemoryRepository<T, ID> implements Repository<T, ID> {
     private final AtomicLong idGenerator = new AtomicLong(1);
     
     @Override
+    @SuppressWarnings("unchecked")
     public T save(T entity) {
         if (entity == null) {
             throw new IllegalArgumentException("Entity cannot be null");
