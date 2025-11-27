@@ -18,6 +18,8 @@ public class Administrador extends Funcionario {
         this.nivelAcesso = nivelAcesso;
     }
 
+    this.tipo = "ADM";
+
     // Getters e Setters
     public String getNivelAcesso() {
         return nivelAcesso;

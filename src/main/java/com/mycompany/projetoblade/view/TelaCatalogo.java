@@ -203,7 +203,50 @@ public class TelaCatalogo extends JPanel {
 
         // Ação ao clicar no ícone - abre tela de cadastro
         btnUserIcon.addActionListener(e -> {
-            CadastroClienteTela.mostrar(parentFrame, clienteService);
+            menuUsuario.removeAll(); // Limpa o menu anterior
+
+            if (!Sessao.isLogado()) {
+                // --- CASO 1: DESLOGADO ---
+                menuUsuario.add(itemLogin);
+                menuUsuario.add(itemCadastro);
+                
+                // Ações para deslogado
+                itemLogin.addActionListener(evt -> new LoginTela(parentFrame).setVisible(true));
+                itemCadastro.addActionListener(evt -> CadastroClienteTela.mostrar(parentFrame)); // Sua tela de cadastro
+            } else {
+                // --- CASO 2: LOGADO ---
+                Usuario usuario = Sessao.getUsuarioLogado(); // Ajuste conforme sua classe Sessao
+                
+                // Cabeçalho (Nome do usuário)
+                JMenuItem headerItem = new JMenuItem("Olá, " + usuario.getNome());
+                headerItem.setEnabled(false);
+                menuUsuario.add(headerItem);
+                menuUsuario.addSeparator();
+
+                // SUA LÓGICA DE "TIPO" (DISCRIMINATOR) AQUI:
+                if (usuario instanceof Funcionario) {
+                    Funcionario func = (Funcionario) usuario;
+                    
+                    // Verifica se é ADM ou MEC usando a string
+                    if ("ADM".equals(func.getTipo())) {
+                        menuUsuario.add(itemClientes); 
+                        menuUsuario.add(itemAgenda);
+                    } 
+                    else if ("MEC".equals(func.getTipo())) {
+                        menuUsuario.add(itemAgenda);
+                    }
+                } 
+                else {
+                    // É um Cliente comum
+                    menuUsuario.add(itemPedidos);
+                }
+
+                menuUsuario.addSeparator();
+                menuUsuario.add(itemSair);
+            }
+
+            // Exibe o menu logo abaixo do ícone
+            menuUsuario.show(btnUserIcon, 0, btnUserIcon.getHeight());
         });
 
         // Adiciona o ícone logo após o botão Vender

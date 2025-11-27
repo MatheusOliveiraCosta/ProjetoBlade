@@ -18,6 +18,8 @@ public class Mecanico extends Funcionario {
         this.especialidade = especialidade;
     }
 
+    this.tipo = "MEC";
+
     // Getters e Setters
     public String getEspecialidade() {
         return especialidade;
@@ -33,4 +35,5 @@ public class Mecanico extends Funcionario {
                 "especialidade='" + especialidade + '\'' +
                 "} " + super.toString();
     }
+
 }
