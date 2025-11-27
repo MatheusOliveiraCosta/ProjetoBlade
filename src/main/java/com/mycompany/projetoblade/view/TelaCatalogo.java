@@ -2,7 +2,7 @@ package com.mycompany.projetoblade.view;
 
 import com.mycompany.projetoblade.model.Veiculo;
 import com.mycompany.projetoblade.utils.Sessao;
-import com.mycompany.projetoblade.model.Cliente;
+// import com.mycompany.projetoblade.model.Cliente; // removed - not needed here
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -16,9 +16,14 @@ import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+// java.util.Locale import not needed because we now use Locale.forLanguageTag fully qualified
 import javax.imageio.ImageIO;
 import com.mycompany.projetoblade.service.VeiculoService;
+import com.mycompany.projetoblade.service.ClienteService;
+import com.mycompany.projetoblade.service.VendaService;
+import com.mycompany.projetoblade.model.Venda;
+import com.mycompany.projetoblade.model.Pagamento;
+import java.time.LocalDate;
 
 /**
  * Tela de catálogo de veículos - Interface moderna inspirada no site Blade Motors.
@@ -31,15 +36,19 @@ public class TelaCatalogo extends JPanel {
     private List<Veiculo> veiculos;
     private List<CardVeiculo> cardsVeiculos;
     private JFrame parentFrame;
-    private Cliente clienteLogado; // Cliente atualmente logado
+    // clienteLogado removed — use Sessao + services directly
     private VeiculoService veiculoService;
+    private ClienteService clienteService;
+    private VendaService vendaService;
     
-    public TelaCatalogo(JFrame parentFrame, VeiculoService veiculoService) {
+    public TelaCatalogo(JFrame parentFrame, VeiculoService veiculoService, ClienteService clienteService, VendaService vendaService) {
         this.parentFrame = parentFrame;
         this.veiculos = new ArrayList<>();
         this.cardsVeiculos = new ArrayList<>();
         this.parentFrame = parentFrame;
         this.veiculoService = veiculoService; // Salva o serviço recebido
+        this.clienteService = clienteService;
+        this.vendaService = vendaService;
         this.veiculos = new ArrayList<>();
         
         setLayout(new BorderLayout());
@@ -99,23 +108,7 @@ public class TelaCatalogo extends JPanel {
         btnMeusVeiculos.setContentAreaFilled(false);
         btnMeusVeiculos.setCursor(new Cursor(Cursor.HAND_CURSOR));
         leftPanel.add(btnMeusVeiculos);
-        btnMeusVeiculos.addActionListener(e -> {
-            // Verifica se há cliente logado
-            if (clienteLogado == null) {
-                JOptionPane.showMessageDialog(this, "Você precisa estar logado para acessar seus veículos.", "Atenção", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            
-            // Busca o veículo do cliente (apenas 1 veículo por cliente)
-            Veiculo veiculoCliente = buscarVeiculoDoCliente(clienteLogado);
-            
-            if (veiculoCliente == null) {
-                JOptionPane.showMessageDialog(this, "Você ainda não possui um veículo.", "Informação", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                // Abre a tela com o único veículo
-                MeusVeiculosTela.mostrar(parentFrame, veiculoCliente);
-            }
-        });
+        // Meus Veículos listener will be added later (uses shared services / Sessao)
 
         gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.3; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.anchor = GridBagConstraints.WEST;
         header.add(leftPanel, gbc);
@@ -210,7 +203,7 @@ public class TelaCatalogo extends JPanel {
 
         // Ação ao clicar no ícone - abre tela de cadastro
         btnUserIcon.addActionListener(e -> {
-            CadastroClienteTela.mostrar(parentFrame);
+            CadastroClienteTela.mostrar(parentFrame, clienteService);
         });
 
         // Adiciona o ícone logo após o botão Vender
@@ -509,6 +502,8 @@ public class TelaCatalogo extends JPanel {
      * Atualiza o grid de ofertas com os veículos
      */
     private void atualizarGridOfertas() {
+        // refresh from repository so UI shows the latest available vehicles
+        veiculos = veiculoService.buscarPorStatus("DISPONIVEL");
         painelOfertas.removeAll();
         cardsVeiculos.clear();
         
@@ -664,81 +659,65 @@ public class TelaCatalogo extends JPanel {
      * @param cliente Cliente para buscar o veículo
      * @return Veiculo do cliente ou null se não possuir
      */
-    private Veiculo buscarVeiculoDoCliente(Cliente cliente) {
-        // Mock: Se o cliente for "João", retorna um veículo específico
-        if (cliente != null && cliente.getUsuario() != null) {
-            String nomeCliente = cliente.getUsuario().getNome();
-            
-            if (nomeCliente != null && nomeCliente.equalsIgnoreCase("João")) {
-                // Retorna um veículo específico para o cliente de teste
-                Veiculo veiculo = new Veiculo("Hatch Moderno", "Hyundai", 2022, "ABC-1234", "CHASSI1");
-                veiculo.setIdVeiculo(1);
-                veiculo.setPreco(75000.00);
-                return veiculo;
-            }
-        }
-        
-        // Para outros clientes, retorna null (não possui veículo)
-        return null;
-    }
+    // buscarVeiculoDoCliente removed — we use veiculoService.buscarPorDono(id)
     
     /**
      * Popula a lista com veículos fictícios
      */
     private void populaVeiculosFake() {
-        veiculos.clear();
+        // If repository already has vehicles, use them; otherwise seed repository so the app always has vehicles available
+        List<Veiculo> existentes = veiculoService.listarTodos();
+        if (existentes == null || existentes.isEmpty()) {
+            // seed repository and keep them available
+            Veiculo v1 = new Veiculo("WorkPro 1.4", "Picape Ágil", 2023, "ABC-1234", "CHASSI001");
+            v1.setPreco(85000.00);
+            v1.setIdVeiculo(1);
+            veiculoService.salvarVeiculo(v1);
+
+            Veiculo v2 = new Veiculo("Gol G-VIII", "Hatch Compacto", 2024, "DEF-5678", "CHASSI002");
+            v2.setPreco(65000.00);
+            v2.setIdVeiculo(2);
+            veiculoService.salvarVeiculo(v2);
+
+            Veiculo v3 = new Veiculo("Conqueror X7", "SUV Premium", 2024, "GHI-9012", "CHASSI003");
+            v3.setPreco(120000.00);
+            v3.setIdVeiculo(3);
+            veiculoService.salvarVeiculo(v3);
+
+            Veiculo v4 = new Veiculo("HB-S 1.0 Turbo", "Hatch Moderno", 2024, "JKL-3456", "CHASSI004");
+            v4.setPreco(75000.00);
+            v4.setIdVeiculo(4);
+            veiculoService.salvarVeiculo(v4);
+
+            Veiculo v5 = new Veiculo("Dodge Ram 2500", "Picape de Luxo", 2023, "MNO-7890", "CHASSI005");
+            v5.setPreco(280000.00);
+            v5.setIdVeiculo(5);
+            veiculoService.salvarVeiculo(v5);
+
+            Veiculo v6 = new Veiculo("Nissan Z", "Esportivo Lendário", 2024, "PQR-1357", "CHASSI006");
+            v6.setPreco(350000.00);
+            v6.setIdVeiculo(6);
+            veiculoService.salvarVeiculo(v6);
+
+            Veiculo v7 = new Veiculo("Civic", "Sedan Executivo", 2024, "STU-2468", "CHASSI007");
+            v7.setPreco(145000.00);
+            v7.setIdVeiculo(7);
+            veiculoService.salvarVeiculo(v7);
+
+            Veiculo v8 = new Veiculo("Corolla", "Sedan Premium", 2024, "VWX-3691", "CHASSI008");
+            v8.setPreco(135000.00);
+            v8.setIdVeiculo(8);
+            veiculoService.salvarVeiculo(v8);
+
+            Veiculo v9 = new Veiculo("Onix", "Hatch Compacto", 2024, "YZA-4826", "CHASSI009");
+            v9.setPreco(70000.00);
+            v9.setIdVeiculo(9);
+            veiculoService.salvarVeiculo(v9);
+        }
+
+        // Show only available vehicles from repository
+        veiculos = veiculoService.buscarPorStatus("DISPONIVEL");
         
-        // Picape Ágil - WorkPro 1.4
-        Veiculo v1 = new Veiculo("WorkPro 1.4", "Picape Ágil", 2023, "ABC-1234", "CHASSI001");
-        v1.setPreco(85000.00);
-        v1.setIdVeiculo(1);
-        veiculos.add(v1);
-        
-        // Hatch Compacto - Gol G-VIII
-        Veiculo v2 = new Veiculo("Gol G-VIII", "Hatch Compacto", 2024, "DEF-5678", "CHASSI002");
-        v2.setPreco(65000.00);
-        v2.setIdVeiculo(2);
-        veiculos.add(v2);
-        
-        // SUV Premium - Conqueror X7
-        Veiculo v3 = new Veiculo("Conqueror X7", "SUV Premium", 2024, "GHI-9012", "CHASSI003");
-        v3.setPreco(120000.00);
-        v3.setIdVeiculo(3);
-        veiculos.add(v3);
-        
-        // Hatch Moderno - HB-S 1.0 Turbo
-        Veiculo v4 = new Veiculo("HB-S 1.0 Turbo", "Hatch Moderno", 2024, "JKL-3456", "CHASSI004");
-        v4.setPreco(75000.00);
-        v4.setIdVeiculo(4);
-        veiculos.add(v4);
-        
-        // Picape de Luxo - Dodge Ram 2500
-        Veiculo v5 = new Veiculo("Dodge Ram 2500", "Picape de Luxo", 2023, "MNO-7890", "CHASSI005");
-        v5.setPreco(280000.00);
-        v5.setIdVeiculo(5);
-        veiculos.add(v5);
-        
-        // Esportivo Lendário - Nissan Z
-        Veiculo v6 = new Veiculo("Nissan Z", "Esportivo Lendário", 2024, "PQR-1357", "CHASSI006");
-        v6.setPreco(350000.00);
-        v6.setIdVeiculo(6);
-        veiculos.add(v6);
-        
-        // Adicionar mais veículos para preencher o grid
-        Veiculo v7 = new Veiculo("Civic", "Sedan Executivo", 2024, "STU-2468", "CHASSI007");
-        v7.setPreco(145000.00);
-        v7.setIdVeiculo(7);
-        veiculos.add(v7);
-        
-        Veiculo v8 = new Veiculo("Corolla", "Sedan Premium", 2024, "VWX-3691", "CHASSI008");
-        v8.setPreco(135000.00);
-        v8.setIdVeiculo(8);
-        veiculos.add(v8);
-        
-        Veiculo v9 = new Veiculo("Onix", "Hatch Compacto", 2024, "YZA-4826", "CHASSI009");
-        v9.setPreco(70000.00);
-        v9.setIdVeiculo(9);
-        veiculos.add(v9);
     }
     
     /**
@@ -803,7 +782,7 @@ public class TelaCatalogo extends JPanel {
             add(Box.createVerticalStrut(15));
             
             // Preço
-            NumberFormat format = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
+            NumberFormat format = NumberFormat.getCurrencyInstance(java.util.Locale.forLanguageTag("pt-BR"));
             precoLabel = new JLabel(format.format(veiculo.getPreco()));
             precoLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
             precoLabel.setForeground(new Color(139, 69, 19));
@@ -893,7 +872,7 @@ public class TelaCatalogo extends JPanel {
                 "Marca: " + veiculo.getMarca() + "\n" +
                 "Ano: " + veiculo.getAno() + "\n" +
                 "Placa: " + veiculo.getPlaca() + "\n" +
-                "Preço: " + NumberFormat.getCurrencyInstance(new Locale("pt", "BR")).format(veiculo.getPreco()),
+                "Preço: " + NumberFormat.getCurrencyInstance(java.util.Locale.forLanguageTag("pt-BR")).format(veiculo.getPreco()),
                 "Detalhes do Veículo",
                 JOptionPane.INFORMATION_MESSAGE
             );
@@ -908,7 +887,7 @@ public class TelaCatalogo extends JPanel {
      * Classe para a sidebar de compra (modal lateral)
      */
     @SuppressWarnings("unused")
-    public static class SidebarCompra extends JDialog {
+    public class SidebarCompra extends JDialog {
         private final Veiculo veiculo;
         
         public SidebarCompra(JFrame parent, Veiculo veiculo) {
@@ -942,7 +921,7 @@ public class TelaCatalogo extends JPanel {
             marca.setAlignmentX(Component.LEFT_ALIGNMENT);
             content.add(marca);
             
-            NumberFormat format = NumberFormat.getCurrencyInstance(new Locale("pt", "BR"));
+            NumberFormat format = NumberFormat.getCurrencyInstance(java.util.Locale.forLanguageTag("pt-BR"));
             JLabel preco = new JLabel("Preço: " + format.format(this.veiculo.getPreco()));
             preco.setFont(new Font("Segoe UI", Font.BOLD, 18));
             preco.setForeground(new Color(139, 69, 19));
@@ -979,8 +958,45 @@ public class TelaCatalogo extends JPanel {
             btnFinalizar.setAlignmentX(Component.CENTER_ALIGNMENT);
             btnFinalizar.setCursor(new Cursor(Cursor.HAND_CURSOR));
             btnFinalizar.addActionListener(e -> {
-                JOptionPane.showMessageDialog(this, "Compra realizada com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
-                dispose();
+                // Verifica sessão
+                if (!Sessao.isLogado()) {
+                    int opt = JOptionPane.showConfirmDialog(this, "Você precisa estar logado para finalizar a compra. Deseja fazer login agora?", "Login necessário", JOptionPane.YES_NO_OPTION);
+                    if (opt == JOptionPane.YES_OPTION) {
+                        // abre tela de login (passando o clienteService)
+                        LoginTela.mostrar(parent, clienteService);
+                        if (!Sessao.isLogado()) {
+                            JOptionPane.showMessageDialog(this, "Login não foi realizado. Compra cancelada.", "Atenção", JOptionPane.WARNING_MESSAGE);
+                            return;
+                        }
+                    } else {
+                        return; // não continua sem login
+                    }
+                }
+
+                try {
+                    // realiza venda utilizando o serviço compartilhado
+                    com.mycompany.projetoblade.model.Cliente cliente = Sessao.getClienteLogado();
+                    // Prevent multiple purchases by same client
+                    List<Veiculo> jaTem = veiculoService.buscarPorDono(cliente.getId());
+                    if (jaTem != null && !jaTem.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "Você já possui um veículo. Não é permitido comprar mais de um.", "Atenção", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+
+                    Venda venda = new Venda(LocalDate.now(), this.veiculo.getPreco(), cliente, this.veiculo);
+                    Pagamento pagamento = new Pagamento("CARTAO", "CONCLUIDO");
+                    venda.setPagamento(pagamento);
+
+                    vendaService.realizarVenda(venda);
+
+                    // Atualiza UI
+                    atualizarGridOfertas();
+
+                    JOptionPane.showMessageDialog(this, "Compra realizada com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                    dispose();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Erro ao realizar a compra: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                }
             });
             content.add(btnFinalizar);
             

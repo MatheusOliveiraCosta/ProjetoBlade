@@ -15,9 +15,11 @@ import javax.imageio.ImageIO;
 public class MeusVeiculosTela extends JDialog {
     
     private Veiculo veiculo;
+    private JFrame parentFrame;
     
     public MeusVeiculosTela(JFrame parent, Veiculo veiculo) {
         super(parent, true); // Modal
+        this.parentFrame = parent;
         setUndecorated(true); // Remove barra de título padrão
         setSize(900, 600);
         setLocationRelativeTo(parent);
@@ -94,8 +96,9 @@ public class MeusVeiculosTela extends JDialog {
         mainPanel.add(topPanel);
         mainPanel.add(Box.createVerticalStrut(20));
         
-        // === TÍTULO "Meu Veículo" ===
-        JLabel tituloVeiculo = new JLabel("Meu Veículo");
+        // === TÍTULO "Meu Veículo" (inclui marca/modelo) ===
+        String marcaModelo = this.veiculo != null ? (this.veiculo.getMarca() + " - " + this.veiculo.getModelo()) : "Meu Veículo";
+        JLabel tituloVeiculo = new JLabel(marcaModelo);
         tituloVeiculo.setFont(new Font("Segoe UI", Font.BOLD, 24));
         tituloVeiculo.setForeground(Color.BLACK);
         tituloVeiculo.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -120,7 +123,7 @@ public class MeusVeiculosTela extends JDialog {
     /**
      * Classe interna para o card de veículo do cliente
      */
-    public static class CardVeiculoCliente extends JPanel {
+    public class CardVeiculoCliente extends JPanel {
         private Veiculo veiculo;
         
         public CardVeiculoCliente(Veiculo veiculo) {
@@ -206,12 +209,12 @@ public class MeusVeiculosTela extends JDialog {
                 "borderWidth: 0;");
             
             btnAgendar.addActionListener(e -> {
-                // Abre a tela de solicitação de manutenção
-                SolicitarManutencaoTela.mostrar((JFrame) SwingUtilities.getWindowAncestor(this));
+                // Abre a tela de solicitação de manutenção usando o parent da instância
+                SolicitarManutencaoTela.mostrar(MeusVeiculosTela.this.parentFrame);
             });
             
-            // Botão "Ver histórico"
-            JButton btnHistorico = new JButton("Ver histórico");
+            // Botão "Detalhes" — mostra marca e modelo
+            JButton btnHistorico = new JButton("Detalhes");
             btnHistorico.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             btnHistorico.setForeground(Color.BLACK);
             btnHistorico.setBackground(new Color(0x999999)); // Cinza médio
@@ -225,7 +228,7 @@ public class MeusVeiculosTela extends JDialog {
                 "borderWidth: 0;");
             
             btnHistorico.addActionListener(e -> {
-                mostrarHistorico();
+                mostrarDetalhes();
             });
             
             painelBotoes.add(btnAgendar);
@@ -255,25 +258,20 @@ public class MeusVeiculosTela extends JDialog {
         /**
          * Mostra o histórico de manutenções do veículo
          */
-        private void mostrarHistorico() {
+        private void mostrarDetalhes() {
             String placa = veiculo.getPlaca() != null && !veiculo.getPlaca().isEmpty() 
                 ? veiculo.getPlaca() 
                 : "N/A";
             
-            // Histórico simulado
-            String historico = "Histórico de Manutenções - Placa: " + placa + "\n\n" +
-                "10/05/2023 - Troca de Óleo\n" +
-                "12/01/2024 - Revisão Completa\n" +
-                "15/03/2024 - Troca de Pneus\n" +
-                "20/06/2024 - Alinhamento e Balanceamento\n" +
-                "05/09/2024 - Troca de Filtros";
-            
-            JOptionPane.showMessageDialog(
-                this,
-                historico,
-                "Histórico de Manutenções",
-                JOptionPane.INFORMATION_MESSAGE
-            );
+            String marca = veiculo.getMarca() != null ? veiculo.getMarca() : "N/A";
+            String modelo = veiculo.getModelo() != null ? veiculo.getModelo() : "N/A";
+
+            String detalhes = "Detalhes do Veículo:\n\n" +
+                "Marca: " + marca + "\n" +
+                "Modelo: " + modelo + "\n" +
+                "Placa: " + placa;
+
+            JOptionPane.showMessageDialog(this, detalhes, "Detalhes do Veículo", JOptionPane.INFORMATION_MESSAGE);
         }
     }
     
