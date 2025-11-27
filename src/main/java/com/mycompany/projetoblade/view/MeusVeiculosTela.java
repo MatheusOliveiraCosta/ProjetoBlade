@@ -246,8 +246,8 @@ public class MeusVeiculosTela extends JDialog {
             btnHistorico.addActionListener(e -> {
                 mostrarDetalhes();
             });
-            
-            List<Manutencao> historico = manutencaoService.buscarPorVeiculo(veiculo.getIdVeiculo());
+
+            java.util.List<Manutencao> historico = manutencaoService.buscarPorVeiculo(veiculo.getIdVeiculo());
 
             boolean temManutencaoAtiva = false;
 
