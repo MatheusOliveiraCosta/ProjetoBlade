@@ -1,6 +1,7 @@
 package com.mycompany.projetoblade.view;
 
 import com.formdev.flatlaf.FlatClientProperties;
+import com.mycompany.projetoblade.model.Manutencao;
 import com.mycompany.projetoblade.model.Veiculo;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -246,6 +247,40 @@ public class MeusVeiculosTela extends JDialog {
                 mostrarDetalhes();
             });
             
+            List<Manutencao> historico = manutencaoService.buscarPorVeiculo(veiculo.getIdVeiculo());
+
+            boolean temManutencaoAtiva = false;
+
+            // 2. Verifica se a última manutenção está ativa
+            if (!historico.isEmpty()) {
+                // Pega a última da lista (assumindo que a lista insere no final)
+                Manutencao ultima = historico.get(historico.size() - 1);
+                String status = ultima.getStatus().toUpperCase();
+                
+                if (status.equals("AGUARDANDO") || status.equals("EM_ANDAMENTO") || status.equals("EM DIAGNÓSTICO")) {
+                    temManutencaoAtiva = true;
+                }
+            }
+
+            // 3. Define a visibilidade do botão
+            if (temManutencaoAtiva) {
+                // Se já tem uma rolando, esconde o botão de solicitar nova
+                btnAgendar.setVisible(false); 
+                
+                // Opcional: Adicionar um texto avisando
+                JLabel aviso = new JLabel("<html><center><font color='red'>Manutenção em andamento</font></center></html>");
+                painelBotoes.add(aviso);
+            } else {
+                // Se não tem (ou a última já acabou), mostra o botão
+                btnAgendar.setVisible(true);
+            }
+
+            // Adiciona ao painel
+            if (btnAgendar.isVisible()) {
+                painelBotoes.add(btnAgendar);
+            }
+            painelBotoes.add(btnHistorico);
+
             painelBotoes.add(btnAgendar);
             
             // Botão "Solicitar Nova Manutenção" (mais explícito)
