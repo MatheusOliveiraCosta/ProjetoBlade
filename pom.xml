@@ -33,6 +33,13 @@
             <version>5.9.2</version>
             <scope>test</scope>
         </dependency>
+        
+        <!-- MySQL Connector/J para conexão com banco de dados MySQL -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.30</version>
+        </dependency>
     </dependencies>
     
     <build>

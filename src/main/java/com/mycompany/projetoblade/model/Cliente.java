@@ -77,4 +77,8 @@ public class Cliente {
                 ", usuario=" + usuario +
                 '}';
     }
+
+    public String getDataNascimento() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }
