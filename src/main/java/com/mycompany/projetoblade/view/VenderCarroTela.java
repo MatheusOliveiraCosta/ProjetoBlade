@@ -231,9 +231,14 @@ public class VenderCarroTela extends JDialog {
             // Require login before allowing vehicle registration
             if (!com.mycompany.projetoblade.utils.Sessao.isLogado()) {
                 int opt = JOptionPane.showConfirmDialog(this, "Você precisa estar logado para cadastrar um veículo. Deseja fazer login agora?", "Login necessário", JOptionPane.YES_NO_OPTION);
-                if (opt == JOptionPane.YES_OPTION) {
-                    LoginTela.mostrar(parent, this.clienteService);
-                }
+                    if (opt == JOptionPane.YES_OPTION) {
+                        try {
+                            LoginTela.mostrar(parent, this.clienteService);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            JOptionPane.showMessageDialog(this, "Erro ao abrir a tela de login: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
                 if (!com.mycompany.projetoblade.utils.Sessao.isLogado()) {
                     JOptionPane.showMessageDialog(this, "Cadastro cancelado. Faça login para cadastrar um veículo.", "Atenção", JOptionPane.WARNING_MESSAGE);
                     return;

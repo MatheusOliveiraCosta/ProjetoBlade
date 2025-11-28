@@ -153,7 +153,12 @@ public class CadastroClienteTela extends JDialog {
             public void mouseClicked(MouseEvent e) {
                 // Fecha a tela de cadastro e abre a tela de login
                 dispose();
-                LoginTela.mostrar(parent, CadastroClienteTela.this.clienteService);
+                try {
+                    LoginTela.mostrar(parent, CadastroClienteTela.this.clienteService);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(parent, "Erro ao abrir a tela de login: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
         

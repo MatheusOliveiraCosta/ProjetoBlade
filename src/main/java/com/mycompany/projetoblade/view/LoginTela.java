@@ -178,10 +178,70 @@ public class LoginTela extends JDialog {
                         Sessao.login(adm);
                         JOptionPane.showMessageDialog(this, "Login como Administrador realizado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
                         dispose();
-                        // Open client management for administrador
+                        // Open client management for administrador - use reflection/fallback so we don't rely on a specific constructor signature
                         SwingUtilities.invokeLater(() -> {
-                            TelaGerenciarClientes tela = new TelaGerenciarClientes((JFrame) this.getOwner(), new com.mycompany.projetoblade.service.ClienteService(new com.mycompany.projetoblade.repository.ClienteRepositoryImpl()));
-                            tela.setVisible(true);
+                            try {
+                                Class<?> cls = Class.forName("com.mycompany.projetoblade.view.TelaGerenciarClientes");
+                                JFrame owner = (JFrame) this.getOwner();
+                                Object service = new com.mycompany.projetoblade.service.ClienteService(new com.mycompany.projetoblade.repository.ClienteRepositoryImpl());
+
+                                // Try to find a static mostrar(JFrame, ClienteService) method
+                                java.lang.reflect.Method found = null;
+                                for (java.lang.reflect.Method m : cls.getMethods()) {
+                                    if ("mostrar".equals(m.getName())) {
+                                        Class<?>[] p = m.getParameterTypes();
+                                        if (p.length == 2 && p[0].isAssignableFrom(JFrame.class) && p[1].isAssignableFrom(service.getClass())) {
+                                            found = m;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (found != null) {
+                                    found.invoke(null, owner, service);
+                                    return;
+                                }
+
+                                // Try mostrar(JFrame)
+                                for (java.lang.reflect.Method m : cls.getMethods()) {
+                                    if ("mostrar".equals(m.getName()) && m.getParameterCount() == 1 && m.getParameterTypes()[0].isAssignableFrom(JFrame.class)) {
+                                        m.invoke(null, owner);
+                                        return;
+                                    }
+                                }
+
+                                // Try constructor (JFrame, ClienteService)
+                                java.lang.reflect.Constructor<?> ctor = null;
+                                for (java.lang.reflect.Constructor<?> c : cls.getConstructors()) {
+                                    Class<?>[] p = c.getParameterTypes();
+                                    if (p.length == 2 && p[0].isAssignableFrom(JFrame.class) && p[1].isAssignableFrom(service.getClass())) {
+                                        ctor = c;
+                                        break;
+                                    }
+                                }
+                                if (ctor != null) {
+                                    Object tela = ctor.newInstance(owner, service);
+                                    if (tela instanceof java.awt.Window) {
+                                        ((java.awt.Window) tela).setVisible(true);
+                                        return;
+                                    }
+                                }
+
+                                // Try no-arg constructor
+                                try {
+                                    Object tela = cls.getDeclaredConstructor().newInstance();
+                                    if (tela instanceof java.awt.Window) {
+                                        ((java.awt.Window) tela).setVisible(true);
+                                        return;
+                                    }
+                                } catch (NoSuchMethodException ignore) {
+                                    // no default ctor
+                                }
+
+                                JOptionPane.showMessageDialog(owner, "Não foi possível abrir automaticamente a tela de gerenciamento de clientes.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                                JOptionPane.showMessageDialog(null, "Erro ao abrir tela de gerenciamento de clientes: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                            }
                         });
                         return;
                     }
@@ -322,8 +382,13 @@ public class LoginTela extends JDialog {
      */
     public static void mostrar(JFrame parent, ClienteService clienteService) {
         SwingUtilities.invokeLater(() -> {
-            LoginTela tela = new LoginTela(parent, clienteService);
-            tela.setVisible(true);
+            try {
+                LoginTela tela = new LoginTela(parent, clienteService);
+                tela.setVisible(true);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(parent, "Erro ao abrir a tela de login: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+            }
         });
     }
 }

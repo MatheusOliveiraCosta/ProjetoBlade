@@ -20,9 +20,8 @@ public class MeusVeiculosTela extends JDialog {
     private com.mycompany.projetoblade.service.ManutencaoService manutencaoService;
     private com.mycompany.projetoblade.service.VeiculoService veiculoService;
     
-    public MeusVeiculosTela(JFrame parent, Veiculo veiculo, com.mycompany.projetoblade.service.ManutencaoService service, com.mycompany.projetoblade.service.VeiculoService veiculoService) {
+    public MeusVeiculosTela(JFrame parent, Veiculo veiculo, com.mycompany.projetoblade.service.VeiculoService veiculoService, com.mycompany.projetoblade.service.ManutencaoService manutencaoService) {
         super(parent, true); // Modal
-        this.manutencaoService = service;
         this.parentFrame = parent;
         setUndecorated(true); // Remove barra de título padrão
         setSize(900, 600);
@@ -247,7 +246,16 @@ public class MeusVeiculosTela extends JDialog {
                 mostrarDetalhes();
             });
 
-            java.util.List<Manutencao> historico = manutencaoService.buscarPorVeiculo(veiculo.getIdVeiculo());
+            // Buscar histórico por placa (manutencaoService pode ser nulo)
+            java.util.List<Manutencao> historico;
+            if (MeusVeiculosTela.this.manutencaoService != null) {
+                historico = MeusVeiculosTela.this.manutencaoService.buscarPorPlaca(placa);
+                if (historico == null) {
+                    historico = new java.util.ArrayList<>();
+                }
+            } else {
+                historico = new java.util.ArrayList<>();
+            }
 
             boolean temManutencaoAtiva = false;
 
@@ -429,7 +437,7 @@ public class MeusVeiculosTela extends JDialog {
 
     public static void mostrar(JFrame parent, Veiculo veiculo, com.mycompany.projetoblade.service.VeiculoService veiculoService, com.mycompany.projetoblade.service.ManutencaoService manutencaoService) {
         SwingUtilities.invokeLater(() -> {
-            MeusVeiculosTela tela = new MeusVeiculosTela(parent, veiculo, manutencaoService, veiculoService);
+            MeusVeiculosTela tela = new MeusVeiculosTela(parent, veiculo, veiculoService, manutencaoService);
             tela.setVisible(true);
         });
     }

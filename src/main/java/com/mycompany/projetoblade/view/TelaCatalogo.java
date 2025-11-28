@@ -217,7 +217,14 @@ public class TelaCatalogo extends JPanel {
             JMenuItem itemSair = new JMenuItem("Sair");
 
             // Ações comuns
-            itemLogin.addActionListener(evt -> LoginTela.mostrar(parentFrame, clienteService));
+            itemLogin.addActionListener(evt -> {
+                try {
+                    LoginTela.mostrar(parentFrame, clienteService);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(parentFrame, "Erro ao abrir a tela de login: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                }
+            });
             itemCadastro.addActionListener(evt -> CadastroClienteTela.mostrar(parentFrame, clienteService));
             itemSair.addActionListener(evt -> {
                 Sessao.logout();
@@ -255,7 +262,7 @@ public class TelaCatalogo extends JPanel {
                 itemClientes.addActionListener(evt -> {
                     // Open the client management window
                     SwingUtilities.invokeLater(() -> {
-                        TelaGerenciarClientes tela = new TelaGerenciarClientes(parentFrame, this.clienteService);
+                        TelaGerenciarClientes tela = new TelaGerenciarClientes(parentFrame);
                         tela.setVisible(true);
                     });
                 });
@@ -1032,7 +1039,12 @@ public class TelaCatalogo extends JPanel {
                     int opt = JOptionPane.showConfirmDialog(this, "Você precisa estar logado para finalizar a compra. Deseja fazer login agora?", "Login necessário", JOptionPane.YES_NO_OPTION);
                     if (opt == JOptionPane.YES_OPTION) {
                         // abre tela de login (passando o clienteService)
-                        LoginTela.mostrar(parent, clienteService);
+                        try {
+                            LoginTela.mostrar(parent, clienteService);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            JOptionPane.showMessageDialog(parent, "Erro ao abrir a tela de login: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                        }
                         if (!Sessao.isLogado()) {
                             JOptionPane.showMessageDialog(this, "Login não foi realizado. Compra cancelada.", "Atenção", JOptionPane.WARNING_MESSAGE);
                             return;

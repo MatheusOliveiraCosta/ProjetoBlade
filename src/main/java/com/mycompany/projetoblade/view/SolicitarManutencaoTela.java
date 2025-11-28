@@ -250,6 +250,24 @@ public class SolicitarManutencaoTela extends JDialog {
         });
     }
 
+    /**
+     * Mostra a tela com serviços injetados (opcionalmente passando placa).
+     */
+    public static void mostrar(JFrame parent, VeiculoService veiculoService, ManutencaoService manutencaoService) {
+        SwingUtilities.invokeLater(() -> {
+            SolicitarManutencaoTela tela = new SolicitarManutencaoTela(parent, veiculoService, manutencaoService);
+            tela.setVisible(true);
+        });
+    }
+
+    public static void mostrar(JFrame parent, VeiculoService veiculoService, ManutencaoService manutencaoService, String placa) {
+        SwingUtilities.invokeLater(() -> {
+            SolicitarManutencaoTela tela = new SolicitarManutencaoTela(parent, veiculoService, manutencaoService);
+            if (tela.placaField != null && placa != null) tela.placaField.setText(placa);
+            tela.setVisible(true);
+        });
+    }
+
     /** Set placa programmatically (safe accessor) */
     public void setPlaca(String placa) {
         if (this.placaField != null && placa != null) this.placaField.setText(placa);

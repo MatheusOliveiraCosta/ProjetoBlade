@@ -205,6 +205,6 @@ public class TelaGerenciarClientes extends JDialog {
             });
         }
         // Adiciona o caso da imagem
-        modeloTabela.addRow(new Object[]{"Matheus Oliveira", "111.803.699-98", "(41) 99876-5432", "matheus@gmail.com", "Parana"});
+        modeloTabela.addRow(new Object[]{"Matheus Oliveira", "222.903.788-04", "(41) 99876-5432", "mats@gmail.com", "Parana"});
     }
 }
