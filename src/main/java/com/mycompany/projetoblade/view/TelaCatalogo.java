@@ -1,4 +1,4 @@
-package com.mycompany.projetoblade.view;
+package com.mycompany.projetoblade.View;
 
 import com.mycompany.projetoblade.model.Veiculo;
 import com.mycompany.projetoblade.utils.Sessao;

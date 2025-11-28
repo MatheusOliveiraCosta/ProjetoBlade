@@ -1,4 +1,4 @@
-package com.mycompany.projetoblade.view;
+package com.mycompany.projetoblade.View;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -7,7 +7,7 @@ import javax.swing.UIManager;
 import com.mycompany.projetoblade.repository.VeiculoRepository;
 import com.mycompany.projetoblade.repository.VeiculoRepositoryImpl;
 import com.mycompany.projetoblade.service.VeiculoService;
-import com.mycompany.projetoblade.repository.ClienteRepositoryImpl;
+import com.mycompany.projetoblade.repository.ClienteDAO;
 import com.mycompany.projetoblade.service.ClienteService;
 import com.mycompany.projetoblade.repository.VendaRepositoryImpl;
 import com.mycompany.projetoblade.service.VendaService;
@@ -31,8 +31,8 @@ public class Main {
         // Depois cria o Serviço passando o Repositório
         VeiculoService veiculoService = new VeiculoService(veiculoRepository);
 
-        // Criar repositório/serviço de clientes (compartilhado)
-        com.mycompany.projetoblade.repository.ClienteRepository clienteRepository = new ClienteRepositoryImpl();
+        // Criar repositório/serviço de clientes (compartilhado) - usando ClienteDAO para salvar no banco
+        com.mycompany.projetoblade.repository.ClienteRepository clienteRepository = new ClienteDAO();
         ClienteService clienteService = new ClienteService(clienteRepository);
 
         // Criar repositório/serviço de vendas (compartilhado) e injetar o mesmo veiculoRepository e clienteRepository

@@ -1,4 +1,4 @@
-package com.mycompany.projetoblade.view;
+package com.mycompany.projetoblade.View;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import javax.swing.*;

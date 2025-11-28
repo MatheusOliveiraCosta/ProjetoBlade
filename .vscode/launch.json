@@ -8,14 +8,14 @@
             "type": "java",
             "name": "Main",
             "request": "launch",
-            "mainClass": "com.mycompany.projetoblade.view.Main",
+            "mainClass": "com.mycompany.projetoblade.View.Main",
             "projectName": "ProjetoBlade"
         },
         {
             "type": "java",
             "name": "VeiculoFormTela",
             "request": "launch",
-            "mainClass": "com.mycompany.projetoblade.view.VeiculoFormTela",
+            "mainClass": "com.mycompany.projetoblade.View.VeiculoFormTela",
             "projectName": "ProjetoBlade"
         },
         {

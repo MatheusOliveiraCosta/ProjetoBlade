@@ -1,5 +1,6 @@
 package com.mycompany.projetoblade.model;
 
+import java.time.LocalDate;
 import java.util.Objects;
 
 /**
@@ -11,6 +12,7 @@ public class Cliente {
     private String endereco;
     private String cpf;
     private Usuario usuario;
+    private LocalDate dataNascimento;
 
     // Construtor padrão
     public Cliente() {}
@@ -55,6 +57,14 @@ public class Cliente {
         this.usuario = usuario;
     }
 
+    public LocalDate getDataNascimento() {
+        return dataNascimento;
+    }
+
+    public void setDataNascimento(LocalDate dataNascimento) {
+        this.dataNascimento = dataNascimento;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -75,10 +85,7 @@ public class Cliente {
                 ", endereco='" + endereco + '\'' +
                 ", cpf='" + cpf + '\'' +
                 ", usuario=" + usuario +
+                ", dataNascimento=" + dataNascimento +
                 '}';
-    }
-
-    public String getDataNascimento() {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

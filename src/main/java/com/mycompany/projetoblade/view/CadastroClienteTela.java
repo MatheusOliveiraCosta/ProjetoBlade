@@ -1,4 +1,4 @@
-package com.mycompany.projetoblade.view;
+package com.mycompany.projetoblade.View;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.mycompany.projetoblade.service.ClienteService;
@@ -184,8 +184,10 @@ public class CadastroClienteTela extends JDialog {
                     Usuario usuario = new Usuario(campoNome.getText().trim(), campoEmail.getText().trim(), new String(campoSenha.getPassword()));
                     Cliente cliente = new Cliente(campoEndereco.getText().trim(), campoCPF.getText().trim(), usuario);
 
+                    System.out.println("Tentando salvar cliente: " + cliente);
                     Cliente salvo = this.clienteService.salvarCliente(cliente);
                     // faz login automático
+                    
                     Sessao.login(salvo);
 
                     JOptionPane.showMessageDialog(this, "Cadastro realizado com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);

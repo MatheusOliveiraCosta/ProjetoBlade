@@ -7,9 +7,9 @@ import java.sql.SQLException;
 public class DatabaseConnection {
 
     // Configurações do Banco de Dados
-    private static final String URL = "jdbc:mysql://localhost:3306/blade_db";
-    private static final String USER = "seu_usuario"; // Mude para seu usuário do DB
-    private static final String PASSWORD = "sua_senha"; // Mude para sua senha do DB
+    private static final String URL = "jdbc:mysql://localhost:3306/blade_db?useSSL=false&serverTimezone=UTC";
+    private static final String USER = "nelson"; // Mude para seu usuário do DB
+    private static final String PASSWORD = "abc123"; // Mude para sua senha do DB
 
     /**
      * Estabelece e retorna uma nova conexão com o banco de dados.
